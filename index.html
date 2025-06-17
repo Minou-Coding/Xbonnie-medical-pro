@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xBonnie Médical Pro - Diagnostics Avancés</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 95%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: clamp(20px, 4vw, 30px);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 5L60 35L90 35L68 53L78 83L50 65L22 83L32 53L10 35L40 35Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-20px, -20px) rotate(10deg); }
+        }
+
+        .header h1 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+
+        .controls {
+            padding: clamp(20px, 4vw, 30px);
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: clamp(10px, 2vw, 15px);
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: clamp(10px 20px, 3vw, 12px 24px);
+            border: none;
+            border-radius: 25px;
+            font-size: clamp(14px, 3vw, 16px);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-simple {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-simple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
+        }
+
+        .btn-complex {
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            color: #333;
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+        }
+
+        .btn-complex:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 154, 158, 0.6);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            color: #333;
+            box-shadow: 0 5px 15px rgba(168, 237, 234, 0.4);
+        }
+
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 237, 234, 0.6);
+        }
+
+        .category-filters {
+            display: flex;
+            gap: clamp(8px, 2vw, 10px);
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: clamp(6px 12px, 2vw, 8px 16px);
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: clamp(12px, 2.5vw, 14px);
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .search-box {
+            padding: clamp(10px 16px, 3vw, 12px 20px);
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: clamp(14px, 3vw, 16px);
+            width: 100%;
+            max-width: 400px;
+            transition: all 0.3s ease;
+            min-height: 44px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .patient-search-container {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            padding: clamp(15px, 4vw, 25px);
+            border-radius: 15px;
+            margin: 20px clamp(10px, 2vw, 0);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e3f2fd;
+        }
+
+        .patient-search-container h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: clamp(1.1rem, 4vw, 1.3rem);
+        }
+
+        .patient-search-box-container {
+            display: flex;
+            gap: clamp(8px, 2vw, 10px);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .patient-search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: clamp(12px 16px, 3vw, 15px 20px);
+            border: 2px solid #2196f3;
+            border-radius: 25px;
+            font-size: clamp(14px, 3vw, 16px);
+            font-style: italic;
+            transition: all 0.3s ease;
+            min-height: 44px;
+        }
+
+        .patient-search-box:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+        }
+
+        .smart-search-btn {
+            padding: clamp(12px 20px, 3vw, 15px 25px);
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: clamp(14px, 3vw, 16px);
+            min-height: 44px;
+            min-width: 120px;
+        }
+
+        .smart-search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .intelligent-results {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .intelligent-results h4 {
+            color: #4caf50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .suggestion-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 3px solid #ffc107;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .suggestion-card:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+
+        .suggestion-card.best-match {
+            border-left-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e8, #f8f9fa);
+        }
+
+        .suggestion-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .suggestion-confidence {
+            font-size: 12px;
+            background: #4caf50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 15px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .suggestion-confidence.medium {
+            background: #ff9800;
+        }
+
+        .suggestion-confidence.low {
+            background: #9e9e9e;
+        }
+
+        .suggestion-patient-words {
+            font-style: italic;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .suggestion-complexity {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .suggestion-complexity.simple {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .suggestion-complexity.complex {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .content {
+            padding: clamp(15px, 4vw, 30px);
+        }
+
+        .random-result {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: clamp(20px, 4vw, 30px);
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .random-result.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .random-result h3 {
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+            margin-bottom: 15px;
+        }
+
+        .patient-speech {
+            background: rgba(255, 255, 255, 0.2);
+            padding: clamp(12px, 3vw, 15px);
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #ffeb3b;
+        }
+
+        .patient-speech strong {
+            color: #ffeb3b;
+        }
+
+        .category-section {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+            color: #333;
+            margin-bottom: 20px;
+            padding: clamp(12px, 3vw, 15px);
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
+            gap: clamp(15px, 3vw, 20px);
+        }
+
+        .diagnostic-card {
+            background: white;
+            border-radius: 15px;
+            padding: clamp(15px, 4vw, 25px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+
+        .diagnostic-card.simple {
+            border-left: 5px solid #4facfe;
+        }
+
+        .diagnostic-card.complex {
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .diagnostic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .diagnostic-card.hidden {
+            display: none;
+        }
+
+        .diagnostic-card.highlighted {
+            background: linear-gradient(135deg, #fff5f5, #ffffff);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            transform: scale(1.02);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .complexity-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: clamp(10px, 2.5vw, 12px);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .complexity-simple {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .complexity-complex {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .card-title {
+            font-size: clamp(1.1rem, 3.5vw, 1.3rem);
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .card-content {
+            color: #666;
+            line-height: 1.6;
+            font-size: clamp(14px, 3vw, 16px);
+        }
+
+        .symptoms {
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: clamp(10px, 3vw, 12px);
+            border-radius: 8px;
+        }
+
+        .symptoms strong {
+            color: #333;
+        }
+
+        .patient-words {
+            background: #e8f4fd;
+            padding: clamp(12px, 3vw, 15px);
+            border-radius: 10px;
+            border-left: 3px solid #007bff;
+            margin: 15px 0;
+        }
+
+        .patient-words strong {
+            color: #007bff;
+        }
+
+        .treatment {
+            background: #f8f9fa;
+            padding: clamp(12px, 3vw, 15px);
+            border-radius: 10px;
+            border-left: 3px solid #28a745;
+        }
+
+        .treatment strong {
+            color: #28a745;
+        }
+
+        .footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .diagnostic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .search-box {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .patient-search-container {
+                margin: 20px 10px;
+                padding: 20px 15px;
+            }
+
+            .patient-search-box-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .patient-search-box {
+                font-size: 14px;
+            }
+
+            .smart-search-btn {
+                width: 100%;
+                padding: 12px 20px;
+            }
+
+            .suggestion-card {
+                padding: 12px;
+            }
+
+            .suggestion-title {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 xBonnie Médical Pro</h1>
+            <p>Système de Diagnostics Simples & Complexes pour Ambulanciers</p>
+        </div>
+
+        <div class="controls">
+            <div class="btn-group">
+                <button class="btn btn-simple" onclick="randomDiagnostic('simple')">
+                    🍃 Cas Simple Aléatoire
+                </button>
+                <button class="btn btn-complex" onclick="randomDiagnostic('complex')">
+                    ⚡ Cas Complexe Aléatoire
+                </button>
+                <button class="btn btn-reset" onclick="resetView()">
+                    🔄 Réinitialiser
+                </button>
+            </div>
+            
+            <div class="category-filters">
+                <button class="filter-btn active" onclick="filterCategory('all')">Tous</button>
+                <button class="filter-btn" onclick="filterCategory('simple')">Simples</button>
+                <button class="filter-btn" onclick="filterCategory('complex')">Complexes</button>
+            </div>
+
+            <div class="search-container">
+                <input type="text" class="search-box" placeholder="Rechercher un diagnostic..." onkeyup="searchDiagnostics(this.value)">
+            </div>
+            
+            <div class="patient-search-container">
+                <h3 style="text-align: center; color: #333; margin-bottom: 15px;">🎯 Diagnostic Intelligent</h3>
+                <div class="patient-search-box-container">
+                    <input type="text" class="patient-search-box" placeholder='Tapez ce que dit le patient : "J\'ai mal à la tête depuis ce matin..."' onkeyup="intelligentSearch(this.value)">
+                    <button class="smart-search-btn" onclick="intelligentSearch(document.querySelector('.patient-search-box').value)">🔍 Analyser</button>
+                </div>
+                <div class="intelligent-results" id="intelligentResults" style="display: none;">
+                    <h4>📋 Diagnostics Suggérés :</h4>
+                    <div id="suggestedDiagnostics"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="random-result" id="randomResult">
+                <h3 id="randomTitle">🎯 Diagnostic Sélectionné</h3>
+                <div id="randomContent"></div>
+            </div>
+
+            <div class="category-section" id="simpleSection">
+                <div class="category-title">🍃 Diagnostics Simples (Consultations courantes)</div>
+                <div class="diagnostic-grid" id="simpleGrid">
+                    <!-- Diagnostics simples générés par JavaScript -->
+                </div>
+            </div>
+
+            <div class="category-section" id="complexSection">
+                <div class="category-title">⚡ Diagnostics Complexes (Urgences vitales)</div>
+                <div class="diagnostic-grid" id="complexGrid">
+                    <!-- Diagnostics complexes générés par JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 xBonnie Médical Pro - Système de Roleplay Médical Avancé</p>
+        </div>
+    </div>
+
+    <script>
+        const simpleDiagnostics = [
+            {
+                title: "Mal de Tête Ordinaire",
+                symptoms: "Douleur légère au front, fatigue",
+                patientWords: "J'ai mal à la tête depuis ce matin, c'est pas terrible...",
+                treatment: "Prenez deux comprimés d'aspirine et reposez-vous. Buvez beaucoup d'eau. Si ça persiste plus de 24h, revenez me voir."
+            },
+            {
+                title: "Rhume Classique",
+                symptoms: "Nez qui coule, éternuements, gorge irritée",
+                patientWords: "Je me sens pas bien, j'arrête pas d'éternuer et j'ai le nez bouché...",
+                treatment: "C'est un rhume banal. Restez au chaud, buvez des tisanes chaudes et reposez-vous. Ça va passer en quelques jours."
+            },
+            {
+                title: "Petite Coupure au Doigt",
+                symptoms: "Coupure superficielle, saignement léger",
+                patientWords: "Je me suis coupé en cuisinant, ça saigne un peu...",
+                treatment: "Je vais nettoyer et désinfecter la plaie. Voici un pansement. Changez-le tous les jours et gardez-le sec."
+            },
+            {
+                title: "Mal de Gorge Léger",
+                symptoms: "Gorge irritée, légère difficulté à avaler",
+                patientWords: "J'ai mal quand j'avale, ça gratte dans la gorge...",
+                treatment: "Gargarisez-vous avec de l'eau salée tiède 3 fois par jour. Prenez du miel et évitez les boissons froides."
+            },
+            {
+                title: "Éraflure sur le Genou",
+                symptoms: "Peau écorchée, saignement minimal, saleté",
+                patientWords: "Je suis tombé en courant, j'ai écorché mon genou...",
+                treatment: "Je nettoie bien la plaie pour enlever les saletés. Voici une compresse. Évitez de gratter et ça cicatrisera bien."
+            },
+            {
+                title: "Mal de Ventre Digestif",
+                symptoms: "Douleur abdominale légère, ballonnements",
+                patientWords: "J'ai mal au ventre depuis que j'ai mangé, ça gargouille...",
+                treatment: "C'est probablement digestif. Mangez léger aujourd'hui, buvez de l'eau et reposez-vous. Évitez les épices."
+            },
+            {
+                title: "Fatigue Générale",
+                symptoms: "Épuisement, manque d'énergie, somnolence",
+                patientWords: "Je suis vraiment très fatigué en ce moment, j'arrive pas à récupérer...",
+                treatment: "Vous manquez de sommeil. Dormez 8h par nuit, mangez équilibré et prenez des vitamines. Évitez l'alcool."
+            },
+            {
+                title: "Douleur au Dos (Tension)",
+                symptoms: "Douleur musculaire dans le bas du dos",
+                patientWords: "J'ai mal dans le bas du dos, surtout quand je me penche...",
+                treatment: "C'est une tension musculaire. Appliquez du chaud, évitez les efforts et prenez un anti-inflammatoire si besoin."
+            },
+            {
+                title: "Insomnie Légère",
+                symptoms: "Difficultés d'endormissement, réveil nocturne",
+                patientWords: "J'arrive pas à dormir ces derniers temps, je tourne dans mon lit...",
+                treatment: "Évitez les écrans avant de dormir, prenez une tisane de camomille et couchez-vous à heure fixe. Pas de café après 16h."
+            },
+            {
+                title: "Yeux Irrités",
+                symptoms: "Rougeur oculaire, sensation de sable",
+                patientWords: "J'ai les yeux qui piquent et qui sont tout rouges...",
+                treatment: "Rincez vos yeux à l'eau claire. Évitez de les frotter. Utilisez des larmes artificielles et reposez vos yeux des écrans."
+            },
+            {
+                title: "Stress et Anxiété Mineure",
+                symptoms: "Nervosité, palpitations légères, inquiétude",
+                patientWords: "Je me sens stressé en ce moment, j'ai le cœur qui bat vite parfois...",
+                treatment: "Pratiquez la respiration profonde, faites du sport léger et évitez la caféine. Si ça persiste, consultez un psychologue."
+            },
+            {
+                title: "Piqûre d'Insecte",
+                symptoms: "Petite bosse rouge, démangeaison localisée",
+                patientWords: "Quelque chose m'a piqué, ça gratte et c'est tout rouge...",
+                treatment: "Appliquez de la glace puis une crème apaisante. Ne grattez pas. Si ça gonfle beaucoup, revenez me voir."
+            },
+            {
+                title: "Crampe Musculaire",
+                symptoms: "Contraction douloureuse soudaine du muscle",
+                patientWords: "J'ai eu une crampe horrible dans la jambe qui m'a réveillé...",
+                treatment: "Étirez doucement le muscle, massez et hydratez-vous bien. Mangez des bananes pour le potassium."
+            },
+            {
+                title: "Acné Légère",
+                symptoms: "Quelques boutons sur le visage",
+                patientWords: "J'ai des boutons qui apparaissent sur le visage...",
+                treatment: "Nettoyez votre visage matin et soir avec un savon doux. Évitez de percer les boutons et hydratez avec une crème non grasse."
+            },
+            {
+                title: "Constipation Légère",
+                symptoms: "Difficultés à aller aux toilettes depuis 2-3 jours",
+                patientWords: "Ça fait quelques jours que j'arrive pas à aller aux toilettes normalement...",
+                treatment: "Buvez plus d'eau, mangez des fibres (fruits, légumes) et marchez un peu chaque jour. Ça devrait s'arranger."
+            },
+            {
+                title: "Règles Douloureuses",
+                symptoms: "Crampes abdominales pendant les menstruations",
+                patientWords: "J'ai mes règles et j'ai très mal au ventre, c'est normal ?",
+                treatment: "C'est normal d'avoir mal. Appliquez une bouillotte chaude, prenez un antalgique et reposez-vous. Évitez le stress."
+            },
+            {
+                title: "Verrue Plantaire",
+                symptoms: "Petite excroissance dure sous le pied",
+                patientWords: "J'ai une bosse dure sous le pied qui fait mal quand je marche...",
+                treatment: "C'est une verrue. Gardez vos pieds secs, utilisez un pansement rembourré et consultez un dermatologue pour l'enlever."
+            },
+            {
+                title: "Ongles Incarnés",
+                symptoms: "Douleur au coin de l'ongle, légère rougeur",
+                patientWords: "Mon orteil me fait mal sur le côté, l'ongle s'enfonce dans la peau...",
+                treatment: "Trempez votre pied dans l'eau tiède salée. Coupez l'ongle droit, pas en rond. Portez des chaussures larges."
+            },
+            {
+                title: "Hoquet Persistant",
+                symptoms: "Spasmes répétés du diaphragme",
+                patientWords: "J'ai le hoquet depuis une heure, ça s'arrête pas...",
+                treatment: "Buvez lentement un verre d'eau froide ou retenez votre respiration 10 secondes. Ça va passer, ne vous inquiétez pas."
+            },
+            {
+                title: "Écorchure Mineure",
+                symptoms: "Égratignure superficielle, peu de saignement",
+                patientWords: "Je me suis égratigné sur une branche, c'est pas profond...",
+                treatment: "Je nettoie et désinfecte. Voici un petit pansement. Surveillez que ça ne s'infecte pas. Changez le pansement demain."
+            },
+            {
+                title: "Toux Sèche",
+                symptoms: "Toux irritative sans expectoration",
+                patientWords: "Je tousse beaucoup, surtout la nuit, ça m'empêche de dormir...",
+                treatment: "Prenez du miel avant de dormir, humidifiez votre chambre et évitez les irritants comme la fumée. Buvez chaud."
+            },
+            {
+                title: "Migraine Légère",
+                symptoms: "Mal de tête unilatéral, sensibilité à la lumière",
+                patientWords: "J'ai mal d'un côté de la tête et la lumière me dérange...",
+                treatment: "Reposez-vous dans le noir, appliquez du froid sur votre front et prenez un antalgique. Évitez le bruit."
+            },
+            {
+                title: "Diarrhée Passagère",
+                symptoms: "Selles liquides fréquentes depuis ce matin",
+                patientWords: "J'ai la diarrhée depuis ce matin, je dois souvent aller aux toilettes...",
+                treatment: "Buvez beaucoup pour éviter la déshydratation. Mangez du riz et des bananes. Si ça dure plus de 2 jours, revenez."
+            },
+            {
+                title: "Nausée Légère",
+                symptoms: "Sensation de haut-le-cœur, malaise léger",
+                patientWords: "J'ai envie de vomir depuis ce matin, ça va et ça vient...",
+                treatment: "Mangez léger et fractionné. Buvez de l'eau par petites gorgées. Évitez les odeurs fortes et reposez-vous."
+            },
+            {
+                title: "Courbatures",
+                symptoms: "Douleurs musculaires diffuses, raideur",
+                patientWords: "J'ai mal partout dans le corps, surtout dans les jambes et le dos...",
+                treatment: "Prenez un bain chaud, reposez-vous et hydratez-vous. C'est probablement viral. Prenez du paracétamol si besoin."
+            },
+            {
+                title: "Fièvre Légère (38°C)",
+                symptoms: "Température légèrement élevée, frissons",
+                patientWords: "Je me sens chaud et j'ai des frissons, je pense que j'ai de la fièvre...",
+                treatment: "Votre température est à 38°C. Reposez-vous, buvez beaucoup et prenez du paracétamol. Surveillez si ça monte."
+            },
+            {
+                title: "Écorchure sur la Main",
+                symptoms: "Peau abrasée sur la paume, légère douleur",
+                patientWords: "Je suis tombé et je me suis écorché la main sur le sol...",
+                treatment: "Je nettoie bien pour enlever les impuretés. Voici un pansement adapté. Bougez normalement votre main."
+            },
+            {
+                title: "Mal d'Oreille Léger",
+                symptoms: "Douleur dans l'oreille, sensation de bouchon",
+                patientWords: "J'ai mal dans l'oreille et j'entends moins bien de ce côté...",
+                treatment: "Ne mettez rien dans l'oreille. Prenez un antalgique et consultez si ça empire. Évitez l'eau dans l'oreille."
+            },
+            {
+                title: "Peau Sèche",
+                symptoms: "Démangeaisons, peau qui tiraille",
+                patientWords: "Ma peau me gratte et elle est toute sèche, surtout sur les bras...",
+                treatment: "Hydratez votre peau matin et soir avec une crème. Évitez les douches trop chaudes et les savons agressifs."
+            },
+            {
+                title: "Éternuements Allergiques",
+                symptoms: "Éternuements répétés, nez qui coule clair",
+                patientWords: "J'arrête pas d'éternuer et j'ai le nez qui coule comme de l'eau...",
+                treatment: "C'est une allergie. Prenez un antihistaminique et évitez l'allergène si vous le connaissez. Rincez votre nez."
+            },
+            {
+                title: "Bleu/Hématome",
+                symptoms: "Ecchymose violacée suite à un choc",
+                patientWords: "Je me suis cogné et j'ai un gros bleu qui est apparu...",
+                treatment: "Appliquez de la glace les premières heures, puis du chaud. Le bleu va changer de couleur et disparaître en 10 jours."
+            },
+            {
+                title: "Gorge Sèche",
+                symptoms: "Sensation de soif persistante, gorge rêche",
+                patientWords: "J'ai tout le temps soif et ma gorge est sèche...",
+                treatment: "Buvez régulièrement de l'eau, sucez des pastilles pour la gorge et humidifiez l'air de votre maison."
+            },
+            {
+                title: "Petite Brûlure Cuisine",
+                symptoms: "Rougeur sur la peau, douleur légère",
+                patientWords: "Je me suis brûlé en cuisinant, c'est rouge et ça pique...",
+                treatment: "Passez immédiatement sous l'eau froide 10 minutes. Appliquez une crème apaisante. Ne percez pas les cloques."
+            },
+            {
+                title: "Chevilles Gonflées",
+                symptoms: "Œdème léger aux chevilles en fin de journée",
+                patientWords: "Mes chevilles gonflent le soir, surtout quand il fait chaud...",
+                treatment: "Surélevez vos jambes le soir, évitez de rester debout trop longtemps et marchez régulièrement dans la journée."
+            },
+            {
+                title: "Aphtes dans la Bouche",
+                symptoms: "Petites ulcérations douloureuses sur la langue",
+                patientWords: "J'ai des petits boutons dans la bouche qui me font mal pour manger...",
+                treatment: "Évitez les aliments acides et épicés. Utilisez un bain de bouche antiseptique et ça guérira en une semaine."
+            },
+            {
+                title: "Crampe d'Estomac",
+                symptoms: "Douleur ponctuelle à l'estomac",
+                patientWords: "J'ai une douleur qui vient et qui part dans l'estomac...",
+                treatment: "Mangez léger, évitez l'alcool et le café. Prenez une tisane de camomille et reposez-vous après les repas."
+            },
+            {
+                title: "Vertiges Légers",
+                symptoms: "Sensation de tournis en se levant",
+                patientWords: "Quand je me lève vite, j'ai la tête qui tourne un peu...",
+                treatment: "Levez-vous plus lentement, hydratez-vous bien et évitez les mouvements brusques. C'est de l'hypotension."
+            },
+            {
+                title: "Crampe au Mollet",
+                symptoms: "Contraction douloureuse du muscle du mollet",
+                patientWords: "J'ai eu une crampe terrible dans le mollet en dormant...",
+                treatment: "Étirez votre mollet en tirant vos orteils vers vous. Massez doucement et buvez plus d'eau. Mangez des bananes."
+            },
+            {
+                title: "Petite Entorse de Poignet",
+                symptoms: "Douleur au poignet, léger gonflement",
+                patientWords: "Je me suis tordu le poignet en tombant, ça fait mal mais je peux bouger...",
+                treatment: "Mettez de la glace 15 minutes, 3 fois par jour. Évitez les mouvements douloureux. Si ça empire, revenez."
+            },
+            {
+                title: "Sinusite Légère",
+                symptoms: "Sensation de pression au niveau des sinus",
+                patientWords: "J'ai l'impression d'avoir la tête lourde, surtout au niveau du front...",
+                treatment: "Faites des inhalations d'eau chaude, dormez la tête surélevée et prenez un décongestionnant nasal si besoin."
+            }
+        ];
+
+        const complexDiagnostics = [
+            {
+                title: "Arrêt Cardiaque",
+                symptoms: "Perte de conscience, absence de pouls, arrêt respiratoire",
+                patientWords: "Le patient ne répond pas, ne respire plus...",
+                treatment: "MASSAGE CARDIAQUE IMMÉDIAT ! 'Restez avec moi ! Je vais vous sauver !' Défibrillateur en urgence, adrénaline IV. Transport code rouge."
+            },
+            {
+                title: "Blessure par Balle - Thorax",
+                symptoms: "Plaie perforante, saignement abondant, détresse respiratoire",
+                patientWords: "J'ai mal... je peux plus respirer... aidez-moi...",
+                treatment: "'Vous allez vous en sortir ! Respirez calmement.' Compression directe, oxygène haut débit, morphine IV. Chirurgie d'urgence."
+            },
+            {
+                title: "Traumatisme Crânien Sévère",
+                symptoms: "Plaie au crâne, sang dans les oreilles, pupilles inégales",
+                patientWords: "Ma tête... où je suis ? Qu'est-ce qui s'est passé ?",
+                treatment: "'Vous êtes en sécurité, ne bougez pas.' Minerve cervicale, surveillance neurologique. Scanner cérébral urgent."
+            },
+            {
+                title: "Hémorragie Massive",
+                symptoms: "Perte de sang importante, pâleur extrême, pouls faible",
+                patientWords: "J'ai froid... je vois flou... je vais mourir ?",
+                treatment: "'Non, vous ne mourrez pas ! Je suis là.' Compression des points de saignement, perfusion massive, transfusion urgente."
+            },
+            {
+                title: "Overdose de Drogue",
+                symptoms: "Inconscience, respiration très lente, lèvres bleues",
+                patientWords: "Le patient est inconscient, ne répond pas aux stimuli...",
+                treatment: "'Vous m'entendez ? Restez avec moi !' Narcan IV immédiat, ventilation assistée, lavage gastrique si nécessaire."
+            },
+            {
+                title: "Brûlures 3ème Degré (60% du Corps)",
+                symptoms: "Peau carbonisée, état de choc, douleur extrême",
+                patientWords: "Ça fait trop mal... je peux plus... aidez-moi s'il vous plaît...",
+                treatment: "'Je vais soulager votre douleur.' Morphine IV forte dose, perfusion massive, pansements spéciaux. Centre des brûlés."
+            },
+            {
+                title: "AVC Majeur",
+                symptoms: "Paralysie faciale, troubles de la parole, confusion",
+                patientWords: "Je... peux... plus... parler... normalement... mon bras...",
+                treatment: "'Vous faites un AVC, on va vous soigner.' Position latérale, oxygène, glycémie. Transport stroke unit sous 3h."
+            },
+            {
+                title: "Électrocution Haute Tension",
+                symptoms: "Brûlures d'entrée/sortie, arrêt cardiaque possible",
+                patientWords: "Le patient a été trouvé inconscient près de la ligne électrique...",
+                treatment: "'Vous êtes en sécurité maintenant.' Monitoring cardiaque continu, perfusion, surveillance des brûlures internes."
+            },
+            {
+                title: "Pneumothorax Bilatéral",
+                symptoms: "Détresse respiratoire extrême, cyanose, angoisse",
+                patientWords: "Je peux pas respirer... j'étouffe... aidez-moi vite...",
+                treatment: "'Respirez avec moi, je vais vous aider.' Drainage thoracique bilatéral d'urgence, oxygène pur, sédation."
+            },
+            {
+                title: "Polytraumatisme (Accident Grave)",
+                symptoms: "Fractures multiples, hémorragies, état de choc",
+                patientWords: "Tout me fait mal... mes jambes... je sens plus rien...",
+                treatment: "'Vous êtes entre de bonnes mains.' Immobilisation complète, antalgiques majeurs, bilan lésionnel complet."
+            },
+            {
+                title: "Embolie Pulmonaire Massive",
+                symptoms: "Douleur thoracique, essoufflement extrême, malaise",
+                patientWords: "Je peux plus respirer... ça fait mal dans la poitrine...",
+                treatment: "'Restez calme, on va déboucher vos poumons.' Anticoagulants IV, oxygène, thrombolyse d'urgence."
+            },
+            {
+                title: "Choc Anaphylactique",
+                symptoms: "Gonflement généralisé, chute tensionnelle, urticaire",
+                patientWords: "Ça gonfle partout... je peux plus respirer... mes yeux...",
+                treatment: "'C'est une allergie grave, je vous soigne.' Adrénaline IM immédiate, corticoïdes IV, surveillance intensive."
+            },
+            {
+                title: "Intoxication au Monoxyde de Carbone",
+                symptoms: "Maux de tête violents, confusion, coma",
+                patientWords: "Ma tête... j'arrive plus à réfléchir... j'ai envie de vomir...",
+                treatment: "'Vous avez respiré du monoxyde.' Oxygène pur 100%, chambre hyperbare d'urgence, surveillance neurologique."
+            },
+            {
+                title: "Hémorragie Digestive Massive",
+                symptoms: "Vomissements de sang, selles noires, faiblesse",
+                patientWords: "Je vomis du sang... j'ai peur... qu'est-ce qui m'arrive ?",
+                treatment: "'C'est une hémorragie, on va l'arrêter.' Perfusion massive, transfusion, endoscopie d'urgence pour cautériser."
+            },
+            {
+                title: "Fracture Ouverte Fémorale",
+                symptoms: "Os visible, saignement important, douleur extrême",
+                patientWords: "Ma jambe... je vois l'os... ça fait trop mal... je vais vomir...",
+                treatment: "'Je vais stabiliser votre jambe.' Immobilisation, morphine IV, pansement stérile, chirurgie orthopédique urgente."
+            },
+            {
+                title: "Sepsis Sévère",
+                symptoms: "Fièvre élevée, frissons, confusion, hypotension",
+                patientWords: "J'ai très froid... mais chaud aussi... je comprends plus rien...",
+                treatment: "'Vous avez une infection grave.' Antibiotiques IV large spectre, perfusion, surveillance en réanimation."
+            },
+            {
+                title: "Coma Diabétique",
+                symptoms: "Inconscience, respiration particulière, haleine acétonique",
+                patientWords: "Le patient diabétique trouvé inconscient chez lui...",
+                treatment: "'Coma diabétique détecté.' Glycémie urgente, insuline IV ou glucose selon résultat, réanimation."
+            },
+            {
+                title: "Noyade avec Arrêt Respiratoire",
+                symptoms: "Inconscience, eau dans les poumons, cyanose",
+                patientWords: "Patient sorti de l'eau inconscient, ne respire plus...",
+                treatment: "'Je vais évacuer l'eau de vos poumons.' Ventilation forcée, aspiration bronchique, réchauffement corporel."
+            },
+            {
+                title: "Crush Syndrome (Écrasement)",
+                symptoms: "Membre écrasé plusieurs heures, douleur extrême",
+                patientWords: "Ma jambe... elle est coincée depuis 3 heures... ça fait trop mal...",
+                treatment: "'On va vous libérer.' Perfusion avant dégagement, surveillance rénale, amputation possible à discuter."
+            },
+            {
+                title: "Plaie Jugulaire (Artère Sectionnée)",
+                symptoms: "Saignement artériel pulsatile au cou, pâleur",
+                patientWords: "Mon cou... ça saigne beaucoup... j'ai peur de mourir...",
+                treatment: "'Regardez-moi, vous allez vivre.' Compression directe ferme, perfusion massive, chirurgie vasculaire d'urgence."
+            },
+            {
+                title: "État de Mal Épileptique",
+                symptoms: "Convulsions continues plus de 30 minutes",
+                patientWords: "Patient en crise épileptique depuis 45 minutes...",
+                treatment: "'Je vais arrêter les convulsions.' Diazépam IV, phénytoïne, protection voies aériennes, réanimation."
+            },
+            {
+                title: "Hypothermie Sévère (<28°C)",
+                symptoms: "Température très basse, rigidité, bradycardie",
+                patientWords: "J'ai... si... froid... plus... sensation...",
+                treatment: "'On va vous réchauffer progressivement.' Réchauffement externe et interne, surveillance cardiaque, CEC si nécessaire."
+            },
+            {
+                title: "Perforation Intestinale",
+                symptoms: "Douleur abdominale atroce, défense, fièvre",
+                patientWords: "Mon ventre... ça fait atrocement mal... comme si ça explosait...",
+                treatment: "'C'est votre intestin, on va opérer.' Perfusion, antibiotiques IV, laparotomie d'urgence, réanimation."
+            },
+            {
+                title: "Dissection Aortique",
+                symptoms: "Douleur thoracique déchirante, différence tensionnelle",
+                patientWords: "Ma poitrine... comme un couteau... ça déchire tout...",
+                treatment: "'C'est votre aorte qui se déchire.' Antalgiques majeurs, contrôle tensionnel, chirurgie cardiaque d'urgence."
+            },
+            {
+                title: "Œdème Pulmonaire Aigu",
+                symptoms: "Essoufflement extrême, mousse rosée, angoisse",
+                patientWords: "Je me noie... j'étouffe... de l'eau sort de ma bouche...",
+                treatment: "'Votre cœur fatigue, on va l'aider.' Position assise, oxygène, diurétiques IV, cardiologie d'urgence."
+            },
+            {
+                title: "Tétanie Généralisée",
+                symptoms: "Spasmes musculaires généralisés, contractures",
+                patientWords: "Mes muscles... ils se contractent tout seuls... j'arrive plus à bouger...",
+                treatment: "'C'est le tétanos, je vous vaccine.' Sérum antitétanique, relaxants musculaires, ventilation assistée."
+            },
+            {
+                title: "Rupture de Rate",
+                symptoms: "Douleur abdominale gauche, hémorragie interne",
+                patientWords: "J'ai mal sous les côtes à gauche... je me sens faible...",
+                treatment: "'Votre rate saigne, on doit opérer.' Position Trendelenburg, perfusion massive, splénectomie d'urgence."
+            },
+            {
+                title: "Méningite Foudroyante",
+                symptoms: "Maux de tête violents, raideur nuque, purpura",
+                patientWords: "Ma tête va exploser... j'ai mal partout... des taches sur la peau...",
+                treatment: "'C'est une méningite.' Antibiotiques IV immédiate, corticoïdes, isolement, surveillance neurologique."
+            },
+            {
+                title: "Trauma Abdominal Pénétrant",
+                symptoms: "Objet enfoncé dans l'abdomen, hémorragie",
+                patientWords: "Mon ventre... il y a quelque chose dedans... enlevez-le...",
+                treatment: "'Ne bougez pas, on garde l'objet.' Stabilisation de l'objet, perfusion, laparotomie avec retrait contrôlé."
+            },
+            {
+                title: "Convulsions Hyperthermiques",
+                symptoms: "Fièvre >41°C, convulsions, inconscience",
+                patientWords: "Patient trouvé convulsant, très chaud au toucher...",
+                treatment: "'Température trop élevée.' Refroidissement externe agressif, anticonvulsivants, réanimation neurologique."
+            },
+            {
+                title: "Décompression Explosive",
+                symptoms: "Embolie gazeuse, douleurs articulaires, paralysie",
+                patientWords: "J'ai mal dans toutes les articulations... je peux plus bouger les jambes...",
+                treatment: "'Accident de décompression.' Oxygène pur, caisson hyperbare d'urgence, surveillance neurologique."
+            },
+            {
+                title: "Choc Hémorragique Post-Partum",
+                symptoms: "Hémorragie utérine massive, chute tensionnelle",
+                patientWords: "Je saigne beaucoup... je me sens partir... mon bébé va bien ?",
+                treatment: "'Votre bébé va bien.' Massage utérin, ocytocine IV, transfusion massive, hystérectomie si échec."
+            },
+            {
+                title: "Infarctus Massif Antérieur",
+                symptoms: "Douleur thoracique écrasante, sueurs, angoisse",
+                patientWords: "Ma poitrine... un éléphant dessus... je vais mourir...",
+                treatment: "'C'est votre cœur, on va le déboucher.' Aspirine, thrombolyse, coronarographie d'urgence, réanimation."
+            },
+            {
+                title: "Luxation Cervicale Complète",
+                symptoms: "Paralysie complète sous la lésion, détresse respiratoire",
+                patientWords: "Je peux plus bouger... rien du tout... j'ai peur...",
+                treatment: "'Votre colonne est blessée.' Immobilisation absolue, ventilation assistée, réduction orthopédique urgente."
+            },
+            {
+                title: "Pancréatite Nécrosante",
+                symptoms: "Douleur abdominale transfixiante, vomissements",
+                patientWords: "Mon ventre... ça traverse jusqu'au dos... c'est atroce...",
+                treatment: "'Votre pancréas est enflammé.' Jeûne strict, antalgiques majeurs, réanimation, chirurgie si nécrose."
+            }
+        ];
+
+        let currentFilter = 'all';
+
+        function initializePage() {
+            renderDiagnostics();
+            updatePlaceholders();
+            
+            // Event listeners pour l'optimisation responsive
+            window.addEventListener('resize', updatePlaceholders);
+            window.addEventListener('orientationchange', handleOrientationChange);
+            
+            // Amélioration de la recherche intelligente avec debounce
+            const patientSearchBox = document.querySelector('.patient-search-box');
+            patientSearchBox.addEventListener('input', function(e) {
+                debouncedIntelligentSearch(e.target.value);
+            });
+            
+            // Support du clavier pour l'accessibilité
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.classList.contains('patient-search-box')) {
+                    intelligentSearch(e.target.value);
+                }
+            });
+        }
+
+        // Mise à jour de la fonction de défilement pour les résultats aléatoires
+        function randomDiagnostic(type) {
+            let selectedDiagnostic;
+            
+            if (type === 'simple') {
+                const randomIndex = Math.floor(Math.random() * simpleDiagnostics.length);
+                selectedDiagnostic = simpleDiagnostics[randomIndex];
+                document.getElementById('randomTitle').textContent = '🍃 Cas Simple Sélectionné';
+            } else {
+                const randomIndex = Math.floor(Math.random() * complexDiagnostics.length);
+                selectedDiagnostic = complexDiagnostics[randomIndex];
+                document.getElementById('randomTitle').textContent = '⚡ Cas Complexe Sélectionné';
+            }
+            
+            const resultDiv = document.getElementById('randomResult');
+            const contentDiv = document.getElementById('randomContent');
+            
+            contentDiv.innerHTML = `
+                <h4 style="margin-bottom: 15px; color: #ffeb3b; font-size: clamp(1.2rem, 4vw, 1.4rem);">
+                    ${selectedDiagnostic.title}
+                </h4>
+                <div class="patient-speech">
+                    <strong>💬 Le patient dit :</strong><br>
+                    "${selectedDiagnostic.patientWords}"
+                </div>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                    <strong>🔍 Symptômes observés :</strong> ${selectedDiagnostic.symptoms}
+                </p>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                    <strong>🗣️ Réponse à donner :</strong><br>
+                    "${selectedDiagnostic.treatment}"
+                </p>
+            `;
+            
+            resultDiv.classList.add('show');
+            smoothScrollToElement(resultDiv);
+        }
+
+        // Mise à jour de la fonction displayIntelligentResults pour un meilleur scroll
+        function displayIntelligentResults(results, patientInput) {
+            const resultsDiv = document.getElementById('intelligentResults');
+            const suggestionsDiv = document.getElementById('suggestedDiagnostics');
+            
+            if (results.length === 0) {
+                suggestionsDiv.innerHTML = '<p style="color: #666; font-style: italic; font-size: clamp(14px, 3vw, 16px);">Aucun diagnostic trouvé pour ces symptômes. Essayez des mots-clés différents.</p>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            suggestionsDiv.innerHTML = '';
+            
+            results.forEach((result, index) => {
+                const confidence = getConfidenceLevel(result.score);
+                const isbestMatch = index === 0 && result.score > 40;
+                
+                const card = document.createElement('div');
+                card.className = `suggestion-card ${isbestMatch ? 'best-match' : ''}`;
+                card.onclick = () => selectDiagnostic(result, patientInput);
+                
+                // Amélioration pour l'accessibilité
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `Diagnostic suggéré: ${result.title}`);
+                
+                // Support du clavier
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectDiagnostic(result, patientInput);
+                    }
+                });
+                
+                card.innerHTML = `
+                    <div class="suggestion-title">${result.title}</div>
+                    <span class="suggestion-confidence ${confidence.class}">${confidence.text}</span>
+                    <span class="suggestion-complexity ${result.complexity}">${result.complexity === 'simple' ? 'Simple' : 'Complexe'}</span>
+                    <div class="suggestion-patient-words">"${result.patientWords}"</div>
+                    <div style="font-size: clamp(10px, 2.5vw, 12px); color: #888;">Score: ${result.score}</div>
+                `;
+                
+                suggestionsDiv.appendChild(card);
+            });
+            
+            resultsDiv.style.display = 'block';
+            smoothScrollToElement(resultsDiv);
+        }
+
+        function renderDiagnostics(searchQuery = '') {
+            renderSimpleDiagnostics(searchQuery);
+            renderComplexDiagnostics(searchQuery);
+        }
+
+        function renderSimpleDiagnostics(searchQuery = '') {
+            const grid = document.getElementById('simpleGrid');
+            grid.innerHTML = '';
+
+            const filteredDiagnostics = simpleDiagnostics.filter(d => 
+                matchesSearch(d, searchQuery)
+            );
+
+            filteredDiagnostics.forEach((diagnostic, index) => {
+                const card = createDiagnosticCard(diagnostic, 'simple', index);
+                grid.appendChild(card);
+            });
+        }
+
+        function renderComplexDiagnostics(searchQuery = '') {
+            const grid = document.getElementById('complexGrid');
+            grid.innerHTML = '';
+
+            const filteredDiagnostics = complexDiagnostics.filter(d => 
+                matchesSearch(d, searchQuery)
+            );
+
+            filteredDiagnostics.forEach((diagnostic, index) => {
+                const card = createDiagnosticCard(diagnostic, 'complex', index);
+                grid.appendChild(card);
+            });
+        }
+
+        function matchesSearch(diagnostic, query) {
+            if (!query) return true;
+            const searchTerms = query.toLowerCase();
+            return diagnostic.title.toLowerCase().includes(searchTerms) ||
+                   diagnostic.symptoms.toLowerCase().includes(searchTerms) ||
+                   diagnostic.patientWords.toLowerCase().includes(searchTerms) ||
+                   diagnostic.treatment.toLowerCase().includes(searchTerms);
+        }
+
+        function createDiagnosticCard(diagnostic, type, index) {
+            const card = document.createElement('div');
+            card.className = `diagnostic-card ${type}`;
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="complexity-badge complexity-${type}">
+                        ${type === 'simple' ? 'Simple' : 'Complexe'}
+                    </span>
+                    <h3 class="card-title">${diagnostic.title}</h3>
+                </div>
+                <div class="card-content">
+                    <div class="symptoms">
+                        <strong>🔍 Symptômes observés :</strong><br>
+                        ${diagnostic.symptoms}
+                    </div>
+                    <div class="patient-words">
+                        <strong>💬 Ce que dit le patient :</strong><br>
+                        "${diagnostic.patientWords}"
+                    </div>
+                    <div class="treatment">
+                        <strong>🗣️ Que dire au patient / Actions :</strong><br>
+                        "${diagnostic.treatment}"
+                    </div>
+                </div>
+            `;
+            
+            // Amélioration pour l'accessibilité tactile
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Diagnostic: ${diagnostic.title}`);
+            
+            return card;
+        }
+
+        // Fonction pour ajuster les placeholders selon la taille d'écran
+        function updatePlaceholders() {
+            const searchBox = document.querySelector('.search-box');
+            const patientSearchBox = document.querySelector('.patient-search-box');
+            
+            if (window.innerWidth <= 480) {
+                searchBox.placeholder = 'Rechercher...';
+                patientSearchBox.placeholder = 'Ex: "J\'ai mal à la tête..."';
+            } else if (window.innerWidth <= 768) {
+                searchBox.placeholder = 'Rechercher un diagnostic...';
+                patientSearchBox.placeholder = 'Tapez ce que dit le patient...';
+            } else {
+                searchBox.placeholder = 'Rechercher un diagnostic...';
+                patientSearchBox.placeholder = 'Tapez ce que dit le patient : "J\'ai mal à la tête depuis ce matin..."';
+            }
+        }
+
+        // Fonction pour optimiser l'affichage selon l'orientation
+        function handleOrientationChange() {
+            // Petite pause pour laisser le navigateur s'adapter
+            setTimeout(() => {
+                updatePlaceholders();
+                // Réajuster la grille si nécessaire
+                const grids = document.querySelectorAll('.diagnostic-grid');
+                grids.forEach(grid => {
+                    grid.style.gridTemplateColumns = ''; // Reset pour forcer le recalcul
+                });
+            }, 100);
+        }
+
+        // Amélioration du défilement pour mobile
+        function smoothScrollToElement(element) {
+            const headerHeight = document.querySelector('.header').offsetHeight;
+            const controlsHeight = document.querySelector('.controls').offsetHeight;
+            const offset = headerHeight + controlsHeight + 20;
+            
+            const elementPosition = element.offsetTop - offset;
+            
+            window.scrollTo({
+                top: elementPosition,
+                behavior: 'smooth'
+            });
+        }
+
+        // Optimisation de la recherche intelligente pour éviter les appels trop fréquents
+        let searchTimeout;
+        function debouncedIntelligentSearch(input) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                intelligentSearch(input);
+            }, 300);
+        }
+
+        // Mise à jour de la fonction de sélection de diagnostic pour un meilleur scroll
+        function selectDiagnostic(diagnostic, patientInput) {
+            // Afficher le diagnostic sélectionné dans la zone de résultat aléatoire
+            const resultDiv = document.getElementById('randomResult');
+            const contentDiv = document.getElementById('randomContent');
+            const titleDiv = document.getElementById('randomTitle');
+            
+            titleDiv.textContent = '🎯 Diagnostic Suggéré par IA';
+            
+            contentDiv.innerHTML = `
+                <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>🤖 Recherche :</strong> "${patientInput}"
+                </div>
+                <h4 style="margin-bottom: 15px; color: #ffeb3b; font-size: clamp(1.2rem, 4vw, 1.4rem);">
+                    ${diagnostic.title}
+                </h4>
+                <div class="patient-speech">
+                    <strong>💬 Le patient dit :</strong><br>
+                    "${diagnostic.patientWords}"
+                </div>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                    <strong>🔍 Symptômes observés :</strong> ${diagnostic.symptoms}
+                </p>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                    <strong>🗣️ Réponse à donner :</strong><br>
+                    "${diagnostic.treatment}"
+                </p>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: clamp(12px, 3vw, 14px);">
+                    <strong>📊 Complexité :</strong> <span style="color: ${diagnostic.complexity === 'simple' ? '#4CAF50' : '#FF5722'}">${diagnostic.complexity === 'simple' ? 'Cas Simple' : 'Cas Complexe'}</span>
+                </div>
+            `;
+            
+            resultDiv.classList.add('show');
+            smoothScrollToElement(resultDiv);
+            
+            // Masquer les résultats de recherche
+            document.getElementById('intelligentResults').style.display = 'none';
+            document.querySelector('.patient-search-box').value = '';
+        }
+
+        function randomDiagnostic(type) {
+            let selectedDiagnostic;
+            
+            if (type === 'simple') {
+                const randomIndex = Math.floor(Math.random() * simpleDiagnostics.length);
+                selectedDiagnostic = simpleDiagnostics[randomIndex];
+                document.getElementById('randomTitle').textContent = '🍃 Cas Simple Sélectionné';
+            } else {
+                const randomIndex = Math.floor(Math.random() * complexDiagnostics.length);
+                selectedDiagnostic = complexDiagnostics[randomIndex];
+                document.getElementById('randomTitle').textContent = '⚡ Cas Complexe Sélectionné';
+            }
+            
+            const resultDiv = document.getElementById('randomResult');
+            const contentDiv = document.getElementById('randomContent');
+            
+            contentDiv.innerHTML = `
+                <h4 style="margin-bottom: 15px; color: #ffeb3b; font-size: 1.4rem;">
+                    ${selectedDiagnostic.title}
+                </h4>
+                <div class="patient-speech">
+                    <strong>💬 Le patient dit :</strong><br>
+                    "${selectedDiagnostic.patientWords}"
+                </div>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                    <strong>🔍 Symptômes observés :</strong> ${selectedDiagnostic.symptoms}
+                </p>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                    <strong>🗣️ Réponse à donner :</strong><br>
+                    "${selectedDiagnostic.treatment}"
+                </p>
+            `;
+            
+            resultDiv.classList.add('show');
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetView() {
+            document.getElementById('randomResult').classList.remove('show');
+            document.getElementById('intelligentResults').style.display = 'none';
+            document.querySelectorAll('.diagnostic-card').forEach(card => {
+                card.classList.remove('highlighted');
+            });
+            document.querySelector('.search-box').value = '';
+            document.querySelector('.patient-search-box').value = '';
+            currentFilter = 'all';
+            updateFilterButtons();
+            renderDiagnostics();
+            showAllSections();
+        }
+
+        function filterCategory(category) {
+            currentFilter = category;
+            updateFilterButtons();
+            
+            const simpleSection = document.getElementById('simpleSection');
+            const complexSection = document.getElementById('complexSection');
+            
+            if (category === 'simple') {
+                simpleSection.style.display = 'block';
+                complexSection.style.display = 'none';
+            } else if (category === 'complex') {
+                simpleSection.style.display = 'none';
+                complexSection.style.display = 'block';
+            } else {
+                showAllSections();
+            }
+        }
+
+        function showAllSections() {
+            document.getElementById('simpleSection').style.display = 'block';
+            document.getElementById('complexSection').style.display = 'block';
+        }
+
+        function updateFilterButtons() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeBtn = [...document.querySelectorAll('.filter-btn')].find(btn => 
+                btn.textContent.toLowerCase().includes(currentFilter === 'all' ? 'tous' : currentFilter)
+            );
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+        }
+
+        function searchDiagnostics(query) {
+            renderDiagnostics(query);
+        }
+
+        function intelligentSearch(patientInput) {
+            if (!patientInput || patientInput.trim().length < 3) {
+                document.getElementById('intelligentResults').style.display = 'none';
+                return;
+            }
+
+            const allDiagnostics = [
+                ...simpleDiagnostics.map(d => ({...d, complexity: 'simple'})),
+                ...complexDiagnostics.map(d => ({...d, complexity: 'complex'}))
+            ];
+
+            // Calcul des scores de correspondance
+            const scoredResults = allDiagnostics.map(diagnostic => {
+                const score = calculateMatchScore(patientInput.toLowerCase(), diagnostic);
+                return { ...diagnostic, score };
+            });
+
+            // Tri par score décroissant
+            const sortedResults = scoredResults
+                .filter(result => result.score > 0)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5); // Top 5 résultats
+
+            displayIntelligentResults(sortedResults, patientInput);
+        }
+
+        function calculateMatchScore(patientInput, diagnostic) {
+            const patientWords = diagnostic.patientWords.toLowerCase();
+            const symptoms = diagnostic.symptoms.toLowerCase();
+            const title = diagnostic.title.toLowerCase();
+            
+            let score = 0;
+            
+            // Mots-clés spécifiques avec scores élevés
+            const keywordMatches = {
+                // Douleur et localisation
+                'mal.*tête|maux.*tête|tête.*fait.*mal': ['mal de tête', 'migraine'],
+                'mal.*gorge|gorge.*fait.*mal|avaler.*mal': ['mal de gorge'],
+                'mal.*ventre|ventre.*fait.*mal|estomac': ['mal de ventre', 'crampe'],
+                'mal.*dos|dos.*fait.*mal': ['douleur au dos'],
+                'mal.*oreille|oreille.*fait.*mal': ['mal d\'oreille'],
+                
+                // Symptômes respiratoires
+                'respirer|souffle|étouffe|essoufflement': ['asthme', 'pneumothorax', 'œdème'],
+                'toux|tousse': ['toux'],
+                'éternue|nez.*coule|rhume': ['rhume', 'allergie'],
+                
+                // Symptômes digestifs
+                'vomis|vomir|nausée': ['nausée', 'intoxication', 'hémorragie digestive'],
+                'diarrhée|selles': ['diarrhée'],
+                'constip': ['constipation'],
+                
+                // Blessures
+                'coupé|coupure|saigne|sang': ['coupure', 'plaie', 'hémorragie'],
+                'brûlé|brûlure': ['brûlure'],
+                'tombé|chute': ['fracture', 'trauma', 'ecchymose'],
+                'cogné|hématome|bleu': ['hématome'],
+                
+                // Urgences vitales
+                'plus.*respirer|étouffe': ['arrêt cardiaque', 'pneumothorax', 'allergie'],
+                'poitrine.*fait.*mal|cœur.*fait.*mal': ['crise cardiaque', 'infarctus'],
+                'paralysé|bouge.*plus|sens.*plus': ['avc', 'traumatisme'],
+                'inconscient|évanoui': ['coma', 'trauma crânien'],
+                
+                // Symptômes spécifiques
+                'fièvre|chaud|frissons': ['fièvre', 'infection'],
+                'vertiges|tourne': ['vertiges'],
+                'fatigue|épuisé': ['fatigue'],
+                'stress|anxieux|angoisse': ['stress', 'anxiété'],
+                'allergie|gonfle|démangeaison': ['allergie', 'piqûre'],
+                'crampe|muscle': ['crampe']
+            };
+            
+            // Vérification des correspondances de mots-clés
+            for (const [pattern, keywords] of Object.entries(keywordMatches)) {
+                const regex = new RegExp(pattern, 'i');
+                if (regex.test(patientInput)) {
+                    keywords.forEach(keyword => {
+                        if (patientWords.includes(keyword) || symptoms.includes(keyword) || title.includes(keyword)) {
+                            score += 50;
+                        }
+                    });
+                }
+            }
+            
+            // Correspondance directe de mots
+            const inputWords = patientInput.split(/\s+/).filter(word => word.length > 2);
+            inputWords.forEach(word => {
+                if (patientWords.includes(word)) {
+                    score += 30;
+                } else if (symptoms.includes(word)) {
+                    score += 20;
+                } else if (title.includes(word)) {
+                    score += 15;
+                }
+            });
+            
+            // Correspondance de phrases similaires
+            const inputLength = patientInput.length;
+            const patientWordsLength = patientWords.length;
+            if (inputLength > 10 && patientWordsLength > 10) {
+                const similarity = calculateStringSimilarity(patientInput, patientWords);
+                score += similarity * 40;
+            }
+            
+            return Math.round(score);
+        }
+
+        function calculateStringSimilarity(str1, str2) {
+            const words1 = str1.toLowerCase().split(/\s+/);
+            const words2 = str2.toLowerCase().split(/\s+/);
+            
+            let commonWords = 0;
+            words1.forEach(word => {
+                if (words2.some(w => w.includes(word) || word.includes(w))) {
+                    commonWords++;
+                }
+            });
+            
+            return commonWords / Math.max(words1.length, words2.length);
+        }
+
+        function displayIntelligentResults(results, patientInput) {
+            const resultsDiv = document.getElementById('intelligentResults');
+            const suggestionsDiv = document.getElementById('suggestedDiagnostics');
+            
+            if (results.length === 0) {
+                suggestionsDiv.innerHTML = '<p style="color: #666; font-style: italic;">Aucun diagnostic trouvé pour ces symptômes. Essayez des mots-clés différents.</p>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            suggestionsDiv.innerHTML = '';
+            
+            results.forEach((result, index) => {
+                const confidence = getConfidenceLevel(result.score);
+                const isbestMatch = index === 0 && result.score > 40;
+                
+                const card = document.createElement('div');
+                card.className = `suggestion-card ${isbestMatch ? 'best-match' : ''}`;
+                card.onclick = () => selectDiagnostic(result, patientInput);
+                
+                card.innerHTML = `
+                    <div class="suggestion-title">${result.title}</div>
+                    <span class="suggestion-confidence ${confidence.class}">${confidence.text}</span>
+                    <span class="suggestion-complexity ${result.complexity}">${result.complexity === 'simple' ? 'Simple' : 'Complexe'}</span>
+                    <div class="suggestion-patient-words">"${result.patientWords}"</div>
+                    <div style="font-size: 12px; color: #888;">Score: ${result.score}</div>
+                `;
+                
+                suggestionsDiv.appendChild(card);
+            });
+            
+            resultsDiv.style.display = 'block';
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getConfidenceLevel(score) {
+            if (score >= 60) return { text: 'Correspondance Excellente', class: 'high' };
+            if (score >= 30) return { text: 'Correspondance Bonne', class: 'medium' };
+            return { text: 'Correspondance Possible', class: 'low' };
+        }
+
+        function selectDiagnostic(diagnostic, patientInput) {
+            // Afficher le diagnostic sélectionné dans la zone de résultat aléatoire
+            const resultDiv = document.getElementById('randomResult');
+            const contentDiv = document.getElementById('randomContent');
+            const titleDiv = document.getElementById('randomTitle');
+            
+            titleDiv.textContent = '🎯 Diagnostic Suggéré par IA';
+            
+            contentDiv.innerHTML = `
+                <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>🤖 Recherche :</strong> "${patientInput}"
+                </div>
+                <h4 style="margin-bottom: 15px; color: #ffeb3b; font-size: 1.4rem;">
+                    ${diagnostic.title}
+                </h4>
+                <div class="patient-speech">
+                    <strong>💬 Le patient dit :</strong><br>
+                    "${diagnostic.patientWords}"
+                </div>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                    <strong>🔍 Symptômes observés :</strong> ${diagnostic.symptoms}
+                </p>
+                <p style="margin: 15px 0; background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #4CAF50;">
+                    <strong>🗣️ Réponse à donner :</strong><br>
+                    "${diagnostic.treatment}"
+                </p>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 14px;">
+                    <strong>📊 Complexité :</strong> <span style="color: ${diagnostic.complexity === 'simple' ? '#4CAF50' : '#FF5722'}">${diagnostic.complexity === 'simple' ? 'Cas Simple' : 'Cas Complexe'}</span>
+                </div>
+            `;
+            
+            resultDiv.classList.add('show');
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+            
+            // Masquer les résultats de recherche
+            document.getElementById('intelligentResults').style.display = 'none';
+            document.querySelector('.patient-search-box').value = '';
+        }
+
+        function getConfidenceLevel(score) {
+            if (score >= 60) return { text: 'Correspondance Excellente', class: 'high' };
+            if (score >= 30) return { text: 'Correspondance Bonne', class: 'medium' };
+            return { text: 'Correspondance Possible', class: 'low' };
+        }
+
+        function displayIntelligentResults(results, patientInput) {
+            const resultsDiv = document.getElementById('intelligentResults');
+            const suggestionsDiv = document.getElementById('suggestedDiagnostics');
+            
+            if (results.length === 0) {
+                suggestionsDiv.innerHTML = '<p style="color: #666; font-style: italic; font-size: clamp(14px, 3vw, 16px);">Aucun diagnostic trouvé pour ces symptômes. Essayez des mots-clés différents.</p>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            suggestionsDiv.innerHTML = '';
+            
+            results.forEach((result, index) => {
+                const confidence = getConfidenceLevel(result.score);
+                const isbestMatch = index === 0 && result.score > 40;
+                
+                const card = document.createElement('div');
+                card.className = `suggestion-card ${isbestMatch ? 'best-match' : ''}`;
+                card.onclick = () => selectDiagnostic(result, patientInput);
+                
+                // Amélioration pour l'accessibilité
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `Diagnostic suggéré: ${result.title}`);
+                
+                // Support du clavier
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectDiagnostic(result, patientInput);
+                    }
+                });
+                
+                card.innerHTML = `
+                    <div class="suggestion-title">${result.title}</div>
+                    <span class="suggestion-confidence ${confidence.class}">${confidence.text}</span>
+                    <span class="suggestion-complexity ${result.complexity}">${result.complexity === 'simple' ? 'Simple' : 'Complexe'}</span>
+                    <div class="suggestion-patient-words">"${result.patientWords}"</div>
+                    <div style="font-size: clamp(10px, 2.5vw, 12px); color: #888;">Score: ${result.score}</div>
+                `;
+                
+                suggestionsDiv.appendChild(card);
+            });
+            
+            resultsDiv.style.display = 'block';
+            smoothScrollToElement(resultsDiv);
+        }
+
+        // Initialize page on load
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>
