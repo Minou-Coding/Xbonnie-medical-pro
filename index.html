@@ -808,6 +808,19 @@
             transform: translateY(0);
         }
 
+        /* Empêcher le défilement automatique non désiré */
+        .action-card, .filter-tab, .suggestion-item, .diagnostic-card {
+            scroll-behavior: auto !important;
+        }
+
+        button {
+            outline: none;
+        }
+
+        button:focus {
+            outline: none !important;
+        }
+
         /* Responsive Design */
         @media (max-width: 1024px) {
             .header, .controls, .content, .footer {
@@ -967,10 +980,10 @@
                     <button class="ai-search-btn" onclick="intelligentSearch(document.querySelector('.ai-search-input').value)">🎯 Analyser</button>
                 </div>
                 <div style="text-align: center; margin-top: 16px;">
-                    <button onclick="testQuickSearch()" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin-right: 8px;">
+                    <button type="button" onclick="testQuickSearch(event)" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin-right: 8px;">
                         🧪 Test "tête"
                     </button>
-                    <button onclick="testAdvancedSearch()" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <button type="button" onclick="testAdvancedSearch(event)" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
                         🔬 Test "vomis"
                     </button>
                 </div>
@@ -1542,7 +1555,11 @@
             `;
             
             resultDiv.classList.add('show');
-            smoothScrollToElement(resultDiv);
+            
+            // Ne défiler que si le résultat n'est pas visible
+            setTimeout(() => {
+                smoothScrollToElement(resultDiv);
+            }, 100);
         }
 
         function resetView() {
@@ -1602,10 +1619,7 @@
                 showAllSections();
             }
             
-            // Défiler vers le contenu
-            setTimeout(() => {
-                document.querySelector('.content').scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+            // Ne pas défiler automatiquement lors du filtrage
         }
 
         function showAllSections() {
@@ -2189,7 +2203,11 @@
                 
                 const card = document.createElement('div');
                 card.className = `suggestion-item ${isBestMatch ? 'best-match' : ''}`;
-                card.onclick = () => selectDiagnostic(result, patientInput);
+                card.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectDiagnostic(result, patientInput);
+                };
                 
                 // Amélioration pour l'accessibilité
                 card.setAttribute('tabindex', '0');
@@ -2200,6 +2218,7 @@
                 card.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
+                        e.stopPropagation();
                         selectDiagnostic(result, patientInput);
                     }
                 });
@@ -2225,7 +2244,16 @@
             
             console.log('Affichage de la section des résultats'); // Debug
             resultsDiv.style.display = 'block';
-            smoothScrollToElement(resultsDiv);
+            
+            // Ne défiler vers les résultats que si ils ne sont pas visibles
+            setTimeout(() => {
+                const resultsRect = resultsDiv.getBoundingClientRect();
+                const isVisible = resultsRect.top >= 0 && resultsRect.top <= window.innerHeight;
+                
+                if (!isVisible) {
+                    smoothScrollToElement(resultsDiv);
+                }
+            }, 100);
         }
 
         function getConfidenceLevel(score) {
@@ -2277,24 +2305,34 @@
             `;
             
             resultDiv.classList.add('show');
-            smoothScrollToElement(resultDiv);
             
             // Masquer les résultats de recherche
             document.getElementById('intelligentResults').style.display = 'none';
             document.querySelector('.ai-search-input').value = '';
+            
+            // Ne défiler que si le résultat n'est pas visible
+            setTimeout(() => {
+                smoothScrollToElement(resultDiv);
+            }, 100);
         }
 
         function smoothScrollToElement(element) {
-            const headerHeight = document.querySelector('.header').offsetHeight;
-            const controlsHeight = document.querySelector('.controls').offsetHeight;
-            const offset = headerHeight + controlsHeight + 20;
+            // Ne faire défiler que si l'élément n'est pas déjà visible
+            const elementRect = element.getBoundingClientRect();
+            const isVisible = elementRect.top >= 0 && elementRect.top <= window.innerHeight;
             
-            const elementPosition = element.offsetTop - offset;
-            
-            window.scrollTo({
-                top: Math.max(0, elementPosition),
-                behavior: 'smooth'
-            });
+            if (!isVisible) {
+                const headerHeight = document.querySelector('.header').offsetHeight;
+                const controlsHeight = document.querySelector('.controls').offsetHeight;
+                const offset = headerHeight + controlsHeight + 20;
+                
+                const elementPosition = element.offsetTop - offset;
+                
+                window.scrollTo({
+                    top: Math.max(0, elementPosition),
+                    behavior: 'smooth'
+                });
+            }
         }
 
         // Initialize page on load
@@ -2330,13 +2368,21 @@
         }
         
         // Fonctions de test rapides
-        function testQuickSearch() {
+        function testQuickSearch(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             const aiInput = document.querySelector('.ai-search-input');
             aiInput.value = 'tête';
             intelligentSearch('tête');
         }
         
-        function testAdvancedSearch() {
+        function testAdvancedSearch(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             const aiInput = document.querySelector('.ai-search-input');
             aiInput.value = 'vomis';
             intelligentSearch('vomis');
