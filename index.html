@@ -963,8 +963,16 @@
                     </div>
                 </div>
                 <div class="ai-search-group">
-                    <input type="text" class="ai-search-input" placeholder='Décrivez les symptômes : "mal de tête", "douleur poitrine", "difficile respirer"...' onkeyup="debouncedIntelligentSearch(this.value)" onkeydown="if(event.key==='Enter') intelligentSearch(this.value)">
+                    <input type="text" class="ai-search-input" placeholder='Un mot suffit : "tête", "gorge", "respirer", "vomis", "tombé"...' onkeyup="debouncedIntelligentSearch(this.value)" onkeydown="if(event.key==='Enter') intelligentSearch(this.value)">
                     <button class="ai-search-btn" onclick="intelligentSearch(document.querySelector('.ai-search-input').value)">🎯 Analyser</button>
+                </div>
+                <div style="text-align: center; margin-top: 16px;">
+                    <button onclick="testQuickSearch()" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin-right: 8px;">
+                        🧪 Test "tête"
+                    </button>
+                    <button onclick="testAdvancedSearch()" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
+                        🔬 Test "vomis"
+                    </button>
                 </div>
             </div>
 
@@ -1744,12 +1752,21 @@
 
         function debouncedIntelligentSearch(input) {
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                intelligentSearch(input);
-            }, 300);
+            
+            // Recherche immédiate pour les mots très courts (2+ caractères)
+            if (input && input.trim().length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    intelligentSearch(input);
+                }, 200); // Délai plus court pour être plus réactif
+            } else {
+                // Masquer les résultats si l'input est trop court
+                document.getElementById('intelligentResults').style.display = 'none';
+            }
         }
 
         function intelligentSearch(patientInput) {
+            console.log('Recherche intelligente pour:', patientInput); // Debug
+            
             if (!patientInput || patientInput.trim().length < 2) {
                 document.getElementById('intelligentResults').style.display = 'none';
                 return;
@@ -1760,427 +1777,348 @@
                 ...complexDiagnostics.map(d => ({...d, complexity: 'complex'}))
             ];
 
-            // Calcul des scores de correspondance avec le nouvel algorithme amélioré
+            // Calcul des scores de correspondance avec le nouvel algorithme simplifié
             const scoredResults = allDiagnostics.map(diagnostic => {
                 const score = calculateAdvancedMatchScore(patientInput.toLowerCase(), diagnostic);
                 return { ...diagnostic, score };
             });
 
-            // Tri par score décroissant
-            const sortedResults = scoredResults
-                .filter(result => result.score > 5) // Seuil plus bas pour être plus permissif
+            console.log('Scores calculés:', scoredResults.slice(0, 5)); // Debug
+
+            // Tri par score décroissant avec un seuil plus bas
+            let sortedResults = scoredResults
+                .filter(result => result.score > 0) // Seuil très bas pour être permissif
                 .sort((a, b) => b.score - a.score)
-                .slice(0, 8); // Plus de résultats
+                .slice(0, 10); // Plus de résultats
+
+            // Si aucun résultat avec l'algorithme avancé, utiliser une recherche simple
+            if (sortedResults.length === 0) {
+                console.log('Aucun résultat avec algorithme avancé, tentative de recherche simple'); // Debug
+                sortedResults = simpleKeywordSearch(patientInput, allDiagnostics);
+            }
+
+            console.log('Résultats finaux:', sortedResults); // Debug
 
             displayIntelligentResults(sortedResults, patientInput);
+        }
+
+        // Fonction de recherche simple de secours - ULTRA PERMISSIVE
+        function simpleKeywordSearch(input, diagnostics) {
+            const inputLower = input.toLowerCase().trim();
+            const keywords = inputLower.split(/\s+/).filter(word => word.length > 1); // Accepter les mots de 2+ caractères
+            
+            const results = [];
+            
+            diagnostics.forEach(diagnostic => {
+                const text = (diagnostic.title + ' ' + diagnostic.symptoms + ' ' + diagnostic.patientWords).toLowerCase();
+                let score = 0;
+                
+                // === CORRESPONDANCES ULTRA-SIMPLES ===
+                
+                // Si c'est un seul mot très court, être très permissif
+                if (keywords.length === 1 && keywords[0].length >= 2) {
+                    const word = keywords[0];
+                    
+                    // Correspondance directe
+                    if (text.includes(word)) {
+                        score += 50;
+                    }
+                    
+                    // Correspondance partielle pour mots de 3+ caractères
+                    if (word.length >= 3) {
+                        const partial = word.substring(0, word.length - 1);
+                        if (text.includes(partial)) {
+                            score += 30;
+                        }
+                    }
+                    
+                    // Correspondance inversée (mots du diagnostic qui contiennent le mot recherché)
+                    const textWords = text.split(/\s+/);
+                    for (const textWord of textWords) {
+                        if (textWord.length > 2 && textWord.includes(word)) {
+                            score += 40;
+                        }
+                    }
+                    
+                    // Correspondances spécifiques très simples
+                    const ultraSimpleMatches = {
+                        'tête': /tête|migraine|céphalée|mal.*tête|crane|front/i,
+                        'gorge': /gorge|avaler|pharyngite/i,
+                        'ventre': /ventre|estomac|digestif|crampe/i,
+                        'dos': /dos|lombalgie/i,
+                        'poitrine': /poitrine|cœur|cardiaque/i,
+                        'respir': /respir|souffle|asthme/i,
+                        'toux': /toux|bronchite/i,
+                        'vomis': /vomis|nausée/i,
+                        'tombé': /tombé|chute|trauma/i,
+                        'coupé': /coupé|coupure|saigne/i,
+                        'fièvre': /fièvre|température/i,
+                        'fatigué': /fatigué|fatigue|épuisé/i,
+                        'mal': /mal|douleur/i,
+                        'sang': /sang|saigne|hémorragie/i,
+                        'bleu': /bleu|hématome/i,
+                        'brûlé': /brûlé|brûlure/i,
+                        'stress': /stress|anxiété|angoisse/i,
+                        'allergie': /allergie|gratte|piqûre/i
+                    };
+                    
+                    if (ultraSimpleMatches[word] && ultraSimpleMatches[word].test(text)) {
+                        score += 60;
+                    }
+                }
+                
+                // === RECHERCHE MULTI-MOTS ===
+                keywords.forEach(keyword => {
+                    if (text.includes(keyword)) {
+                        score += 25;
+                    }
+                    // Recherche partielle pour mots de 3+ caractères
+                    if (keyword.length >= 3) {
+                        const partial = keyword.substring(0, keyword.length - 1);
+                        if (text.includes(partial)) {
+                            score += 15;
+                        }
+                    }
+                });
+                
+                // === PATTERNS ULTRA-SIMPLES ===
+                const ultraSimplePatterns = [
+                    { pattern: /tête/i, keywords: ['tête', 'migraine'], boost: 40 },
+                    { pattern: /gorge/i, keywords: ['gorge'], boost: 40 },
+                    { pattern: /ventre/i, keywords: ['ventre', 'estomac'], boost: 40 },
+                    { pattern: /dos/i, keywords: ['dos'], boost: 40 },
+                    { pattern: /respir/i, keywords: ['respir'], boost: 40 },
+                    { pattern: /toux/i, keywords: ['toux'], boost: 40 },
+                    { pattern: /vomis/i, keywords: ['vomis', 'nausée'], boost: 40 },
+                    { pattern: /sang/i, keywords: ['sang', 'saigne'], boost: 40 },
+                    { pattern: /tombé/i, keywords: ['tombé', 'chute'], boost: 40 },
+                    { pattern: /coupé/i, keywords: ['coupé', 'coupure'], boost: 40 }
+                ];
+                
+                for (const { pattern, keywords: patternKeywords, boost } of ultraSimplePatterns) {
+                    if (pattern.test(inputLower)) {
+                        const hasMatch = patternKeywords.some(keyword => text.includes(keyword));
+                        if (hasMatch) {
+                            score += boost;
+                        }
+                    }
+                }
+                
+                // Bonus minimal pour éviter les scores 0
+                if (score === 0 && inputLower.length >= 2) {
+                    // Dernière chance : recherche de similitude très basique
+                    const inputChars = inputLower.split('');
+                    for (const char of inputChars) {
+                        if (char.length > 0 && text.includes(char)) {
+                            score += 1; // Score très minimal mais non-zéro
+                        }
+                    }
+                    
+                    // Si toujours 0, donner un score minimal arbitraire
+                    if (score === 0) {
+                        score = 1;
+                    }
+                }
+                
+                if (score > 0) {
+                    results.push({ ...diagnostic, score });
+                }
+            });
+            
+            return results
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10); // Plus de résultats pour être sûr
         }
 
         function calculateAdvancedMatchScore(patientInput, diagnostic) {
             const patientWords = diagnostic.patientWords.toLowerCase();
             const symptoms = diagnostic.symptoms.toLowerCase();
             const title = diagnostic.title.toLowerCase();
-            const input = patientInput.toLowerCase();
+            const input = patientInput.toLowerCase().trim();
             
             let score = 0;
             
-            // === DICTIONNAIRE DE SYMPTÔMES INTELLIGENT ===
-            const symptomDictionary = {
-                // Douleurs - très flexible
-                'douleur_tete': {
-                    keywords: ['mal de tête', 'migraine', 'céphalée', 'crane', 'front', 'tempe'],
-                    patterns: [
-                        /\b(mal|douleur|fait mal|élance|lance|pique|tape).{0,20}(tête|crane|front|tempe|crâne)/i,
-                        /\b(tête|crane|front|tempe|crâne).{0,20}(mal|douleur|fait mal|élance|lance|pique|tape)/i,
-                        /\bmaux?\s+de\s+tête/i,
-                        /\bmigraine/i,
-                        /\bcéphalée/i,
-                        /\bj'?ai\s+mal\s+(à\s+la\s+|dans\s+la\s+)?tête/i,
-                        /\bça\s+(fait\s+mal|élance|lance|pique|tape)\s+dans\s+la\s+tête/i,
-                        /\bj'?ai\s+la\s+tête\s+qui\s+(fait\s+mal|élance|lance|explose)/i
-                    ],
-                    variations: ['mal tête', 'douleur tête', 'mal crane', 'mal front', 'migraine', 'céphalée']
-                },
+            // === CORRESPONDANCES ULTRA-SIMPLES POUR MOTS UNIQUES ===
+            const singleWordMappings = {
+                // Parties du corps
+                'tête': ['tête', 'migraine', 'céphalée', 'mal de tête', 'crane', 'front'],
+                'gorge': ['gorge', 'avaler', 'pharyngite', 'angine'],
+                'ventre': ['ventre', 'estomac', 'abdomen', 'digestif', 'crampe'],
+                'dos': ['dos', 'lombalgie', 'lombaire'],
+                'poitrine': ['poitrine', 'cœur', 'cardiaque', 'thorax'],
+                'oreille': ['oreille'],
+                'œil': ['œil', 'yeux'],
+                'pied': ['pied', 'verrue'],
+                'main': ['main'],
+                'jambe': ['jambe', 'mollet'],
+                'bras': ['bras'],
+                'cou': ['cou', 'nuque'],
                 
-                'douleur_gorge': {
-                    keywords: ['mal de gorge', 'pharyngite', 'angine', 'avaler'],
-                    patterns: [
-                        /\b(mal|douleur|fait mal|pique|gratte|irrité).{0,15}gorge/i,
-                        /\bgorge.{0,15}(mal|douleur|fait mal|pique|gratte|irrité)/i,
-                        /\bj'?ai\s+mal\s+(quand\s+j'?|pour\s+)?avale/i,
-                        /\bça\s+(gratte|pique|fait mal|irrite)\s+(dans\s+la\s+)?gorge/i,
-                        /\bj'?arrive\s+pas\s+à\s+avaler/i,
-                        /\bpharyngite|angine/i
-                    ],
-                    variations: ['mal gorge', 'gorge fait mal', 'avaler mal', 'gorge pique', 'gorge gratte']
-                },
+                // Symptômes simples
+                'mal': ['mal', 'douleur'],
+                'douleur': ['mal', 'douleur'],
+                'respirer': ['respir', 'souffle', 'asthme', 'pneumothorax'],
+                'respiration': ['respir', 'souffle', 'asthme'],
+                'toux': ['toux', 'bronchite'],
+                'éternue': ['éternue', 'rhume', 'allergie'],
+                'rhume': ['rhume', 'éternue', 'nez'],
+                'nez': ['nez', 'rhume', 'éternue'],
+                'vomis': ['vomis', 'vomir', 'nausée'],
+                'vomir': ['vomis', 'vomir', 'nausée'],
+                'nausée': ['nausée', 'vomis'],
+                'diarrhée': ['diarrhée', 'gastro'],
+                'gastro': ['gastro', 'diarrhée'],
                 
-                'douleur_ventre': {
-                    keywords: ['mal de ventre', 'gastrite', 'crampe', 'indigestion', 'abdomen', 'estomac'],
-                    patterns: [
-                        /\b(mal|douleur|crampe|spasme).{0,15}(ventre|estomac|abdomen)/i,
-                        /\b(ventre|estomac|abdomen).{0,15}(mal|douleur|crampe|spasme|fait mal)/i,
-                        /\bj'?ai\s+mal\s+au\s+(ventre|estomac)/i,
-                        /\bça\s+(gargouille|fait mal|crampe|tire)\s+(dans\s+le\s+)?(ventre|estomac)/i,
-                        /\bcramp|gastrite|indigestion/i,
-                        /\bmaux?\s+de\s+ventre/i
-                    ],
-                    variations: ['mal ventre', 'douleur ventre', 'mal estomac', 'crampe ventre', 'ventre fait mal']
-                },
+                // Traumatismes
+                'tombé': ['tombé', 'chute', 'trauma'],
+                'chute': ['chute', 'tombé', 'trauma'],
+                'coupé': ['coupé', 'coupure', 'saigne'],
+                'coupure': ['coupure', 'coupé', 'saigne'],
+                'saigne': ['saigne', 'sang', 'coupure', 'hémorragie'],
+                'sang': ['sang', 'saigne', 'hémorragie'],
+                'brûlé': ['brûlé', 'brûlure'],
+                'brûlure': ['brûlure', 'brûlé'],
+                'bleu': ['bleu', 'hématome'],
+                'hématome': ['hématome', 'bleu'],
                 
-                'douleur_dos': {
-                    keywords: ['mal de dos', 'lombalgie', 'sciatique', 'lombaire'],
-                    patterns: [
-                        /\b(mal|douleur|fait mal|lance|tire).{0,15}dos/i,
-                        /\bdos.{0,15}(mal|douleur|fait mal|lance|tire)/i,
-                        /\blombaire|lombalgie|sciatique/i,
-                        /\bj'?ai\s+mal\s+(dans\s+le\s+|au\s+)?(bas\s+du\s+)?dos/i,
-                        /\bça\s+(lance|tire|fait mal)\s+dans\s+le\s+dos/i
-                    ],
-                    variations: ['mal dos', 'douleur dos', 'dos fait mal', 'lombalgie', 'sciatique']
-                },
+                // États généraux
+                'fièvre': ['fièvre', 'température', 'frissons'],
+                'température': ['température', 'fièvre'],
+                'chaud': ['chaud', 'fièvre', 'température'],
+                'froid': ['froid', 'frissons', 'hypothermie'],
+                'fatigué': ['fatigué', 'fatigue', 'épuisé'],
+                'fatigue': ['fatigue', 'fatigué', 'épuisé'],
+                'épuisé': ['épuisé', 'fatigué', 'fatigue'],
+                'stress': ['stress', 'anxiété', 'angoisse'],
+                'anxieux': ['anxieux', 'stress', 'angoisse'],
+                'angoisse': ['angoisse', 'anxiété', 'stress'],
+                'allergie': ['allergie', 'gratte', 'piqûre'],
+                'gratte': ['gratte', 'allergie', 'démangeaison'],
                 
-                'douleur_poitrine': {
-                    keywords: ['douleur thoracique', 'mal poitrine', 'crise cardiaque', 'infarctus', 'angine'],
-                    patterns: [
-                        /\b(mal|douleur|fait mal|serre|oppresse).{0,15}(poitrine|thorax|torse)/i,
-                        /\b(poitrine|thorax|torse).{0,15}(mal|douleur|fait mal|serre|oppresse)/i,
-                        /\bj'?ai\s+mal\s+(dans\s+la\s+|à\s+la\s+)?poitrine/i,
-                        /\bça\s+(serre|oppresse|fait mal)\s+(dans\s+la\s+)?poitrine/i,
-                        /\binfarctus|crise\s+cardiaque|angine/i,
-                        /\bcœur.{0,15}(mal|fait mal|serre)/i
-                    ],
-                    variations: ['mal poitrine', 'douleur poitrine', 'poitrine serre', 'mal cœur', 'infarctus']
-                },
-                
-                // Symptômes respiratoires
-                'difficulte_respirer': {
-                    keywords: ['dyspnée', 'asthme', 'pneumothorax', 'œdème pulmonaire', 'essoufflement'],
-                    patterns: [
-                        /\b(difficile|dur|arrive pas|peux pas|mal).{0,15}(respir|souffle)/i,
-                        /\b(respir|souffle).{0,15}(difficile|dur|court|coupé)/i,
-                        /\bj'?arrive\s+pas\s+à\s+respirer/i,
-                        /\bj'?ai\s+du\s+mal\s+à\s+respirer/i,
-                        /\bessouffl|dyspnée|asthme/i,
-                        /\bje\s+(suffoque|étouffe|manque\s+d'air)/i,
-                        /\bplus\s+respirer|peux\s+plus\s+respirer/i
-                    ],
-                    variations: ['difficile respirer', 'mal respirer', 'plus respirer', 'essoufflement', 'suffoque', 'étouffe']
-                },
-                
-                'toux': {
-                    keywords: ['toux', 'bronchite', 'rhume', 'expectoration'],
-                    patterns: [
-                        /\btousse?|toussote/i,
-                        /\bj'?arrête\s+pas\s+de\s+tousser/i,
-                        /\bça\s+me\s+fait\s+tousser/i,
-                        /\bbronchite/i
-                    ],
-                    variations: ['tousse', 'toussé', 'toux', 'bronchite']
-                },
-                
-                'eternuements_nez': {
-                    keywords: ['rhume', 'allergie', 'rhinite', 'nez bouché', 'éternuements'],
-                    patterns: [
-                        /\béternue|atchoum/i,
-                        /\bnez.{0,15}(coule|bouché|pris)/i,
-                        /\bj'?arrête\s+pas\s+d'éternuer/i,
-                        /\brhume|rhinite|allergie/i,
-                        /\bj'?ai\s+le\s+nez\s+(qui\s+coule|bouché)/i
-                    ],
-                    variations: ['éternue', 'rhume', 'nez coule', 'nez bouché', 'allergie']
-                },
-                
-                // Symptômes digestifs
-                'nausee_vomissement': {
-                    keywords: ['nausée', 'vomissement', 'gastro', 'mal au cœur'],
-                    patterns: [
-                        /\bvomis|vomir|rendre/i,
-                        /\bnausée/i,
-                        /\benvie\s+de\s+vomir/i,
-                        /\bj'?ai\s+mal\s+au\s+cœur/i,
-                        /\bça\s+(remonte|me\s+donne\s+envie\s+de\s+vomir)/i,
-                        /\bgastro/i
-                    ],
-                    variations: ['nausée', 'vomis', 'vomir', 'mal cœur', 'gastro']
-                },
-                
-                'diarrhee': {
-                    keywords: ['diarrhée', 'gastro', 'turista', 'selles liquides'],
-                    patterns: [
-                        /\bdiarrhée|courante/i,
-                        /\bselles\s+(liquides|molles)/i,
-                        /\bj'?ai\s+la\s+courante/i,
-                        /\bje\s+vais\s+souvent\s+aux\s+toilettes/i,
-                        /\bgastro/i
-                    ],
-                    variations: ['diarrhée', 'courante', 'gastro', 'selles liquides']
-                },
-                
-                // Traumatismes et blessures
-                'blessure_coupure': {
-                    keywords: ['coupure', 'plaie', 'hémorragie', 'saignement', 'blessure'],
-                    patterns: [
-                        /\b(coupé|coupure|blessé|blessure|plaie)/i,
-                        /\b(saigne|sang|hémorragie)/i,
-                        /\bje\s+me\s+suis\s+(coupé|blessé)/i,
-                        /\bça\s+saigne/i,
-                        /\bj'?ai\s+une\s+(plaie|coupure|blessure)/i
-                    ],
-                    variations: ['coupé', 'coupure', 'saigne', 'sang', 'blessé', 'plaie']
-                },
-                
-                'chute_trauma': {
-                    keywords: ['chute', 'traumatisme', 'contusion', 'fracture', 'tombé'],
-                    patterns: [
-                        /\b(tombé|chute|chuté)/i,
-                        /\bje\s+suis\s+tombé/i,
-                        /\bj'?ai\s+fait\s+une\s+chute/i,
-                        /\b(cogné|frappé|heurté)/i,
-                        /\b(hématome|bleu|ecchymose)/i,
-                        /\bfracture|cassé/i
-                    ],
-                    variations: ['tombé', 'chute', 'cogné', 'hématome', 'bleu', 'fracture']
-                },
-                
-                'brulure': {
-                    keywords: ['brûlure', 'échaudure', 'brûlé'],
-                    patterns: [
-                        /\bbrûl/i,
-                        /\bje\s+me\s+suis\s+brûlé/i,
-                        /\bça\s+brûle/i,
-                        /\béchaud/i,
-                        /\bcuisine.{0,10}brûl/i
-                    ],
-                    variations: ['brûlé', 'brûlure', 'brûle', 'échaudure']
-                },
-                
-                // Urgences vitales
-                'urgence_cardiaque': {
-                    keywords: ['infarctus', 'crise cardiaque', 'angine de poitrine', 'arrêt cardiaque'],
-                    patterns: [
-                        /\b(cœur|coeur).{0,15}(mal|douleur|serre|arrête)/i,
-                        /\bj'?ai\s+mal\s+(dans\s+la\s+|à\s+la\s+)?poitrine/i,
-                        /\bça\s+serre\s+(dans\s+la\s+)?poitrine/i,
-                        /\binfarctus|crise\s+cardiaque/i,
-                        /\bangine\s+de\s+poitrine/i,
-                        /\barrêt\s+cardiaque/i
-                    ],
-                    variations: ['infarctus', 'crise cardiaque', 'mal cœur', 'angine', 'arrêt cardiaque']
-                },
-                
-                'urgence_neurologique': {
-                    keywords: ['AVC', 'paralysie', 'hémiplégie', 'stroke', 'accident vasculaire'],
-                    patterns: [
-                        /\b(paralysé|paralysie|bouge\s+plus|sens\s+plus)/i,
-                        /\bje\s+(peux\s+plus|ne\s+peux\s+plus)\s+bouger/i,
-                        /\bj'?ai\s+plus\s+de\s+sensations/i,
-                        /\bAVC|accident\s+vasculaire|stroke/i,
-                        /\bhémiplégie|paralysie/i,
-                        /\bje\s+sens\s+plus\s+(mon\s+bras|ma\s+jambe)/i
-                    ],
-                    variations: ['AVC', 'paralysé', 'paralysie', 'plus bouger', 'hémiplégie', 'accident vasculaire']
-                },
-                
-                'perte_connaissance': {
-                    keywords: ['malaise', 'syncope', 'évanouissement', 'inconscient'],
-                    patterns: [
-                        /\b(inconscient|évanoui|connaissance)/i,
-                        /\bje\s+me\s+suis\s+évanoui/i,
-                        /\bj'?ai\s+perdu\s+connaissance/i,
-                        /\bmalaise|syncope/i,
-                        /\bje\s+tombe\s+dans\s+les\s+pommes/i
-                    ],
-                    variations: ['évanoui', 'malaise', 'inconscient', 'syncope', 'perte connaissance']
-                },
-                
-                // Symptômes généraux
-                'fievre': {
-                    keywords: ['fièvre', 'hyperthermie', 'infection', 'température'],
-                    patterns: [
-                        /\bfièvre|fievre/i,
-                        /\bj'?ai\s+(chaud|de\s+la\s+température)/i,
-                        /\bfrissons/i,
-                        /\btempérature|hyperthermie/i,
-                        /\bje\s+suis\s+(brûlant|en\s+feu)/i,
-                        /\binfection/i
-                    ],
-                    variations: ['fièvre', 'température', 'frissons', 'chaud', 'hyperthermie']
-                },
-                
-                'fatigue': {
-                    keywords: ['fatigue', 'asthénie', 'épuisement', 'faiblesse'],
-                    patterns: [
-                        /\b(fatigué|épuisé|crevé|lessivé)/i,
-                        /\bj'?ai\s+pas\s+d'énergie/i,
-                        /\bje\s+(n'arrive\s+pas\s+à\s+récupérer|suis\s+à\s+bout)/i,
-                        /\b(lassi|faiblesse|asthénie)/i,
-                        /\bje\s+suis\s+(vidé|sans\s+force)/i
-                    ],
-                    variations: ['fatigué', 'épuisé', 'fatigue', 'asthénie', 'pas énergie']
-                },
-                
-                'stress_anxiete': {
-                    keywords: ['stress', 'anxiété', 'angoisse', 'panique', 'nerveux'],
-                    patterns: [
-                        /\b(stressé|anxieux|angoisse|panique|nerveux)/i,
-                        /\bj'?ai\s+(peur|les\s+nerfs)/i,
-                        /\bje\s+suis\s+(inquiet|tendu)/i,
-                        /\b(cœur|coeur)\s+qui\s+bat\s+(vite|fort)/i,
-                        /\bpalpitations/i,
-                        /\bje\s+suis\s+sur\s+les\s+nerfs/i
-                    ],
-                    variations: ['stressé', 'anxieux', 'angoisse', 'panique', 'nerveux', 'peur']
-                },
-                
-                'allergie_reaction': {
-                    keywords: ['allergie', 'urticaire', 'eczéma', 'anaphylaxie', 'démangeaison'],
-                    patterns: [
-                        /\b(allergie|allergique|gonfle|démangeaison|gratte)/i,
-                        /\bça\s+me\s+gratte/i,
-                        /\bj'?ai\s+des\s+(boutons|plaques)/i,
-                        /\burticaire|eczéma|anaphylaxie/i,
-                        /\bpiqûre|piqué/i,
-                        /\bça\s+me\s+démange/i
-                    ],
-                    variations: ['allergie', 'gratte', 'démangeaison', 'urticaire', 'gonfle', 'boutons']
-                }
+                // Urgences
+                'arrêt': ['arrêt', 'cardiaque'],
+                'cardiaque': ['cardiaque', 'cœur', 'infarctus'],
+                'cœur': ['cœur', 'cardiaque', 'infarctus'],
+                'infarctus': ['infarctus', 'cardiaque', 'cœur'],
+                'paralysé': ['paralysé', 'paralysie', 'avc'],
+                'paralysie': ['paralysie', 'paralysé', 'avc'],
+                'avc': ['avc', 'paralysie', 'accident'],
+                'inconscient': ['inconscient', 'évanoui', 'malaise'],
+                'évanoui': ['évanoui', 'inconscient', 'malaise'],
+                'malaise': ['malaise', 'évanoui', 'syncope']
             };
             
-            // === ÉVALUATION INTELLIGENTE DES SYMPTÔMES ===
-            for (const [symptomType, data] of Object.entries(symptomDictionary)) {
-                let symptomScore = 0;
-                let hasPatternMatch = false;
+            // === CORRESPONDANCES DIRECTES DE MOTS UNIQUES ===
+            const inputWords = input.split(/\s+/).filter(word => word.length > 1);
+            const diagnosticFullText = (title + ' ' + symptoms + ' ' + patientWords).toLowerCase();
+            
+            // Si c'est un seul mot, être très permissif
+            if (inputWords.length === 1) {
+                const singleWord = inputWords[0];
                 
-                // Test des patterns regex (score élevé)
-                for (const pattern of data.patterns) {
-                    if (pattern.test(input)) {
-                        hasPatternMatch = true;
-                        break;
+                // Correspondance directe dans le mapping
+                if (singleWordMappings[singleWord]) {
+                    const mappedWords = singleWordMappings[singleWord];
+                    for (const mappedWord of mappedWords) {
+                        if (diagnosticFullText.includes(mappedWord)) {
+                            score += 80; // Score très élevé pour correspondance directe
+                            break;
+                        }
                     }
                 }
                 
-                // Test des variations simples (score moyen)
-                let hasVariationMatch = false;
-                for (const variation of data.variations) {
-                    if (input.includes(variation)) {
-                        hasVariationMatch = true;
-                        break;
+                // Correspondance directe du mot
+                if (diagnosticFullText.includes(singleWord)) {
+                    score += 70;
+                }
+                
+                // Correspondance partielle (racine)
+                if (singleWord.length > 3) {
+                    const root = singleWord.substring(0, singleWord.length - 1);
+                    if (diagnosticFullText.includes(root)) {
+                        score += 50;
                     }
                 }
                 
-                // Vérifier si le diagnostic correspond à ce type de symptôme
-                const diagnosticText = (title + ' ' + symptoms + ' ' + patientWords).toLowerCase();
-                const isRelevantDiagnostic = data.keywords.some(keyword => 
-                    diagnosticText.includes(keyword.toLowerCase())
-                );
-                
-                if (isRelevantDiagnostic) {
-                    if (hasPatternMatch) {
-                        symptomScore += 80; // Score très élevé pour correspondance de pattern
-                    } else if (hasVariationMatch) {
-                        symptomScore += 50; // Score élevé pour variation
+                // Correspondance inversée (chercher si des mots du diagnostic sont dans l'input)
+                const diagnosticWords = diagnosticFullText.split(/\s+/);
+                for (const diagWord of diagnosticWords) {
+                    if (diagWord.length > 3 && diagWord.includes(singleWord)) {
+                        score += 40;
                     }
                 }
-                
-                score += symptomScore;
             }
             
-            // === CORRESPONDANCES DE MOTS-CLÉS FLEXIBLES ===
-            const inputWords = input.split(/\s+/).filter(word => word.length > 2);
-            const diagnosticText = (title + ' ' + symptoms + ' ' + patientWords).toLowerCase();
-            
-            // Correspondance directe de mots
-            for (const word of inputWords) {
-                if (word.length > 2) {
+            // === CORRESPONDANCES MULTIPLES ===
+            for (const inputWord of inputWords) {
+                if (inputWord.length > 2) {
                     // Correspondance exacte
-                    if (patientWords.includes(word)) {
+                    if (patientWords.includes(inputWord)) {
+                        score += 30;
+                    } else if (symptoms.includes(inputWord)) {
                         score += 25;
-                    } else if (symptoms.includes(word)) {
+                    } else if (title.includes(inputWord)) {
                         score += 20;
-                    } else if (title.includes(word)) {
-                        score += 15;
                     }
                     
-                    // Correspondance partielle (racine du mot)
-                    if (word.length > 4) {
-                        const wordRoot = word.substring(0, word.length - 2);
-                        if (diagnosticText.includes(wordRoot)) {
-                            score += 10;
+                    // Correspondance via mapping
+                    if (singleWordMappings[inputWord]) {
+                        const mappedWords = singleWordMappings[inputWord];
+                        for (const mappedWord of mappedWords) {
+                            if (diagnosticFullText.includes(mappedWord)) {
+                                score += 35;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Correspondance partielle
+                    if (inputWord.length > 3) {
+                        const root = inputWord.substring(0, inputWord.length - 1);
+                        if (diagnosticFullText.includes(root)) {
+                            score += 15;
                         }
                     }
                 }
             }
             
-            // === SYNONYMES ET VARIATIONS LINGUISTIQUES ===
-            const synonymGroups = {
-                'douleur': ['mal', 'souffrance', 'fait mal', 'douloureux', 'élance', 'tire', 'pince', 'lance'],
-                'difficile': ['dur', 'compliqué', 'arrive pas', 'peux pas', 'impossible', 'galère'],
-                'beaucoup': ['très', 'vraiment', 'énormément', 'super', 'trop', 'grave'],
-                'depuis': ['ça fait', 'il y a', 'déjà', 'voilà'],
-                'temps': ['moment', 'bout de temps', 'un moment', 'longtemps', 'durée'],
-                'soudain': ['d\'un coup', 'tout d\'un coup', 'subitement', 'brusquement', 'direct'],
-                'toujours': ['sans arrêt', 'constamment', 'en permanence', 'tout le temps', 'non-stop']
-            };
+            // === PATTERNS SIMPLES ===
+            const simplePatterns = [
+                { pattern: /mal.*tête|tête.*mal/i, boost: 60, keywords: ['tête', 'migraine'] },
+                { pattern: /mal.*gorge|gorge.*mal/i, boost: 60, keywords: ['gorge'] },
+                { pattern: /mal.*ventre|ventre.*mal/i, boost: 60, keywords: ['ventre', 'estomac'] },
+                { pattern: /mal.*dos|dos.*mal/i, boost: 60, keywords: ['dos'] },
+                { pattern: /difficile.*respir|respir.*difficile/i, boost: 60, keywords: ['respir'] },
+                { pattern: /je.*vomis|vomis/i, boost: 50, keywords: ['vomis', 'nausée'] },
+                { pattern: /je.*tombé|tombé/i, boost: 50, keywords: ['tombé', 'chute'] },
+                { pattern: /je.*coupé|coupé/i, boost: 50, keywords: ['coupé', 'coupure'] }
+            ];
             
-            // Correspondance par synonymes
-            for (const word of inputWords) {
-                for (const [baseWord, synonyms] of Object.entries(synonymGroups)) {
-                    if (synonyms.includes(word.toLowerCase()) && diagnosticText.includes(baseWord)) {
-                        score += 15;
-                    }
-                    if (word.toLowerCase() === baseWord && synonyms.some(syn => diagnosticText.includes(syn))) {
-                        score += 15;
+            for (const { pattern, boost, keywords } of simplePatterns) {
+                if (pattern.test(input)) {
+                    const hasMatch = keywords.some(keyword => diagnosticFullText.includes(keyword));
+                    if (hasMatch) {
+                        score += boost;
                     }
                 }
             }
             
-            // === BONUS CONTEXTUELS ===
+            // === BONUS POUR LONGUEUR ET PERTINENCE ===
+            if (input.length >= 2) {
+                score += 5; // Bonus de base pour toute recherche
+            }
             
-            // Bonus pour correspondances multiples
+            // Bonus si plusieurs mots correspondent
             const matchingWords = inputWords.filter(word => 
-                word.length > 2 && diagnosticText.includes(word.toLowerCase())
+                diagnosticFullText.includes(word) || 
+                (singleWordMappings[word] && singleWordMappings[word].some(mapped => diagnosticFullText.includes(mapped)))
             ).length;
             
             if (matchingWords > 1) {
-                score += matchingWords * 8;
+                score += matchingWords * 15;
             }
             
-            // Bonus pour similarité de phrases
-            if (input.length > 15 && patientWords.length > 15) {
-                const similarity = calculatePhraseSimilarity(input, patientWords);
-                score += similarity * 30;
-            }
-            
-            // Bonus pour correspondance de longueur d'input appropriée
-            if (input.length > 10 && input.length < 100) {
-                score += 5; // Bonus pour input de longueur raisonnable
-            }
-            
-            // === AJUSTEMENTS FINAUX ===
-            
-            // Malus si aucune pertinence détectée
-            const hasMinimalRelevance = inputWords.some(word => 
-                word.length > 3 && (
-                    diagnosticText.includes(word) || 
-                    diagnosticText.includes(word.substring(0, word.length - 1))
-                )
-            );
-            
-            if (!hasMinimalRelevance && input.length > 8) {
-                score = Math.max(0, score - 25);
-            }
-            
-            // Bonus pour diagnostic de même complexité que les mots de l'input
-            const hasComplexWords = /\b(arrêt|hémorragie|traumatisme|fracture|urgence|grave|sévère)\b/i.test(input);
-            const hasSimpleWords = /\b(léger|petit|simple|bénin|normal)\b/i.test(input);
-            
-            if (hasComplexWords && diagnostic.complexity === 'complex') {
-                score += 20;
-            } else if (hasSimpleWords && diagnostic.complexity === 'simple') {
-                score += 15;
-            }
-            
-            return Math.round(Math.max(0, score));
+            return Math.min(100, Math.max(0, Math.round(score)));
         }
 
         function calculatePhraseSimilarity(str1, str2) {
@@ -2216,21 +2154,38 @@
         }
 
         function displayIntelligentResults(results, patientInput) {
+            console.log('Affichage des résultats:', results.length, 'résultats trouvés'); // Debug
+            
             const resultsDiv = document.getElementById('intelligentResults');
             const suggestionsDiv = document.getElementById('suggestedDiagnostics');
             
             if (results.length === 0) {
-                suggestionsDiv.innerHTML = '<p style="color: #9ca3af; font-style: italic; padding: 20px; text-align: center;">Aucun diagnostic trouvé pour ces symptômes. Essayez des descriptions plus précises comme "mal de tête", "difficile respirer", "douleur poitrine"...</p>';
-                resultsDiv.classList.add('show');
+                console.log('Aucun résultat trouvé, affichage du message d\'aide'); // Debug
+                suggestionsDiv.innerHTML = `
+                    <div style="color: #9ca3af; font-style: italic; padding: 20px; text-align: center; background: rgba(239, 68, 68, 0.1); border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <h4 style="color: #ef4444; margin-bottom: 10px;">❌ Aucun diagnostic trouvé</h4>
+                        <p>Essayez des descriptions plus simples comme :</p>
+                        <ul style="list-style: none; padding: 0; margin: 10px 0;">
+                            <li>• "mal de tête"</li>
+                            <li>• "difficile respirer"</li>
+                            <li>• "douleur poitrine"</li>
+                            <li>• "vomis"</li>
+                            <li>• "tombé"</li>
+                        </ul>
+                        <p><strong>Votre recherche :</strong> "${patientInput}"</p>
+                    </div>
+                `;
+                resultsDiv.style.display = 'block';
                 smoothScrollToElement(resultsDiv);
                 return;
             }
             
+            console.log('Génération des cartes de résultats'); // Debug
             suggestionsDiv.innerHTML = '';
             
             results.forEach((result, index) => {
                 const confidence = getConfidenceLevel(result.score);
-                const isBestMatch = index === 0 && result.score > 40;
+                const isBestMatch = index === 0 && result.score > 30;
                 
                 const card = document.createElement('div');
                 card.className = `suggestion-item ${isBestMatch ? 'best-match' : ''}`;
@@ -2251,20 +2206,25 @@
                 
                 card.innerHTML = `
                     <div class="suggestion-header">
-                        <div class="suggestion-title">${result.title}</div>
+                        <div class="suggestion-title">
+                            ${isBestMatch ? '🎯 ' : ''}${result.title}
+                        </div>
                         <div class="confidence-badges">
                             <span class="confidence-badge ${confidence.class}">${confidence.text}</span>
                             <span class="confidence-badge complexity-badge">${result.complexity === 'simple' ? 'Simple' : 'Complexe'}</span>
                         </div>
                     </div>
                     <div class="suggestion-preview">"${result.patientWords}"</div>
-                    <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">Score de correspondance: ${result.score}%</div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">
+                        Score de correspondance: ${result.score}% ${isBestMatch ? '(Meilleure correspondance)' : ''}
+                    </div>
                 `;
                 
                 suggestionsDiv.appendChild(card);
             });
             
-            resultsDiv.classList.add('show');
+            console.log('Affichage de la section des résultats'); // Debug
+            resultsDiv.style.display = 'block';
             smoothScrollToElement(resultsDiv);
         }
 
@@ -2338,7 +2298,54 @@
         }
 
         // Initialize page on load
-        document.addEventListener('DOMContentLoaded', initializePage);
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page initialisée'); // Debug
+            initializePage();
+            
+            // Test de la recherche intelligente
+            console.log('Test de la recherche intelligente...');
+            // Exemple de test silencieux
+            // intelligentSearch('mal de tête');
+        });
+        
+        // Fonction de test pour débugger
+        function testIntelligentSearch() {
+            console.log('=== TEST DE LA RECHERCHE INTELLIGENTE ===');
+            const testCases = ['mal de tête', 'difficile respirer', 'vomis', 'tombé', 'coupé'];
+            
+            testCases.forEach(testCase => {
+                console.log(`Test pour "${testCase}":`);
+                const allDiagnostics = [
+                    ...simpleDiagnostics.map(d => ({...d, complexity: 'simple'})),
+                    ...complexDiagnostics.map(d => ({...d, complexity: 'complex'}))
+                ];
+                
+                const scoredResults = allDiagnostics.map(diagnostic => {
+                    const score = calculateAdvancedMatchScore(testCase, diagnostic);
+                    return { ...diagnostic, score };
+                }).filter(r => r.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
+                
+                console.log('Résultats:', scoredResults.map(r => ({ title: r.title, score: r.score })));
+            });
+        }
+        
+        // Fonctions de test rapides
+        function testQuickSearch() {
+            const aiInput = document.querySelector('.ai-search-input');
+            aiInput.value = 'tête';
+            intelligentSearch('tête');
+        }
+        
+        function testAdvancedSearch() {
+            const aiInput = document.querySelector('.ai-search-input');
+            aiInput.value = 'vomis';
+            intelligentSearch('vomis');
+        }
+        
+        // Ajouter les fonctions de test au window pour pouvoir les appeler depuis la console
+        window.testIntelligentSearch = testIntelligentSearch;
+        window.testQuickSearch = testQuickSearch;
+        window.testAdvancedSearch = testAdvancedSearch;
     </script>
 </body>
 </html>
